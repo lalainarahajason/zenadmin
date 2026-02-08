@@ -1,0 +1,10 @@
+vendor/wp-config.php
+wp-config.php
+.env
+vendor/
+.DS_Store
+debug_logic.php
+debug_reset.php
+.env.example
+.wp-env.json
+uploads/
