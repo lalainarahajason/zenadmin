@@ -1,45 +1,85 @@
 # Spec Update: Role-Based Visibility Engine (RBVE)
 **Date :** 09 Février 2026  
 **Status :** Finalized  
-**Goal :** Allow selective interface cleaning based on user capabilities.
+**Goal :** Allow selective interface cleaning based on user roles.
 
 ---
 
-## 1. Functional Logic (The "Who sees What")
+## 1. Functional Logic (Multi-Role Selection)
 
-Plutôt que de cibler des rôles rigides (Admin, Editor), ZenAdmin s'appuie sur les **Capabilities** WordPress pour assurer une compatibilité avec les plugins de gestion de membres (User Role Editor, etc.).
+ZenAdmin permet de choisir **plusieurs rôles** pour chaque élément bloqué, offrant un contrôle granulaire sur qui voit quoi.
 
-### Scopes de visibilité disponibles :
-1.  **Global (Everywhere) :** L'élément est masqué pour TOUS les utilisateurs, y compris l'Administrateur.
-2.  **Protect Admin (Exclude Admin) :** L'élément est masqué pour tout le monde, **sauf** pour les utilisateurs ayant la capacité `manage_options`. 
-    * *Usage :* Cacher les pubs Yoast/Elementor pour le client, mais les garder visibles pour le dev.
-3.  **Low Privileges Only :** L'élément est masqué uniquement pour les utilisateurs qui ne peuvent pas éditer les pages des autres (`edit_others_posts`).
-    * *Usage :* Nettoyer l'interface pour les Auteurs et contributeurs externes.
+### Comportement par défaut :
+- Lors du blocage, **tous les rôles sont pré-cochés** (= masqué pour tous).
+- L'utilisateur **décoche** les rôles qui doivent **voir** l'élément.
+
+### Exemple pratique :
+| Élément | Masqué pour | Visible pour |
+|---------|-------------|--------------|
+| Pub Yoast | Editor, Author, Subscriber | Administrator |
+| Rappel Abo | Subscriber | Administrator, Editor, Author |
 
 ---
 
-## 2. Technical Implementation (PHP)
+## 2. Technical Implementation
 
-### Validation des droits lors de l'injection :
-Dans `includes/class-core.php`, la méthode de rendu doit comparer la "capability" requise stockée avec celle de l'utilisateur actuel.
+### 2.1 Backend (`class-core.php`)
 
-
+**Envoyer les rôles disponibles au JS :**
 ```php
-/**
- * Vérifie si un sélecteur doit être injecté pour l'utilisateur actuel.
- * * @param string $visibility_level Le niveau choisi (global, exclude_admin, low_privilege).
- * @return bool True si on doit masquer l'élément.
- */
-function zenadmin_should_hide_for_current_user( $visibility_level ) {
-    switch ( $visibility_level ) {
-        case 'exclude_admin':
-            return ! current_user_can( 'manage_options' );
-        
-        case 'low_privilege':
-            return ! current_user_can( 'edit_others_posts' );
-            
-        case 'global':
-        default:
-            return true;
+global $wp_roles;
+$roles_list = wp_list_pluck( $wp_roles->roles, 'name' );
+// Résultat: ['administrator' => 'Administrator', 'editor' => 'Editor', ...]
+```
+
+**Stockage (wp_options) :**
+```php
+$blacklist[$hash] = [
+    'selector'   => '.notice-yoast',
+    'label'      => 'Pub Yoast',
+    'hidden_for' => ['editor', 'author', 'subscriber'],
+    'created'    => time(),
+];
+```
+
+**Injection conditionnelle :**
+```php
+$user = wp_get_current_user();
+$user_roles = (array) $user->roles;
+
+foreach ($blacklist as $entry) {
+    if ( array_intersect( $user_roles, $entry['hidden_for'] ) ) {
+        $selectors[] = $entry['selector'];
     }
 }
+```
+
+### 2.2 Frontend (`zen-modal.js`)
+
+**UI : Liste de checkboxes dynamique**
+```
+Masquer pour :
+[x] Administrator
+[x] Editor
+[x] Author
+[x] Subscriber
+```
+
+L'utilisateur décoche "Administrator" → l'Admin verra toujours l'élément.
+
+### 2.3 AJAX Payload (`zen-engine.js`)
+
+```javascript
+{
+    action: 'zenadmin_save_block',
+    selector: '.notice-yoast',
+    label: 'Pub Yoast',
+    hidden_for: ['editor', 'author', 'subscriber']
+}
+```
+
+---
+
+## 3. Migration
+
+Les anciens blocs (sans `hidden_for`) sont traités comme `global` (masqué pour tous).

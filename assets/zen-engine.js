@@ -167,6 +167,7 @@
                     showWarning: showWarning,
                     warning: warningMsg,
                     i18n: this.config.i18n,
+                    roles: this.config.roles,
                     onConfirm: (data) => {
                         this.saveBlock(selector, data);
                     },
@@ -325,7 +326,8 @@
                 action: 'zenadmin_save_block',
                 security: this.config.nonce,
                 selector: selector,
-                label: data.label
+                label: data.label,
+                hidden_for: JSON.stringify(data.hiddenFor || [])
             }, (response) => {
                 if (response.success) {
                     this.hideElement(selector);

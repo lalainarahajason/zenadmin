@@ -30,6 +30,7 @@ class Core {
 		add_action( 'admin_bar_menu', array( $this, 'admin_bar_menu' ), 100 );
 		add_action( 'wp_ajax_zenadmin_save_block', array( $this, 'ajax_save_block' ) );
 		add_action( 'wp_ajax_zenadmin_delete_block', array( $this, 'ajax_delete_block' ) );
+		add_action( 'wp_ajax_zenadmin_update_block_roles', array( $this, 'ajax_update_block_roles' ) );
 	}
 
 	/**
@@ -49,6 +50,9 @@ class Core {
 		wp_enqueue_script( 'zenadmin-engine', ZENADMIN_URL . 'assets/zen-engine.js', array( 'zenadmin-modal' ), ZENADMIN_VERSION, true );
 
 		// Localize Script
+		global $wp_roles;
+		$roles_list = wp_list_pluck( $wp_roles->roles, 'name' );
+
 		wp_localize_script(
 			'zenadmin-engine',
 			'zenadminConfig',
@@ -58,12 +62,14 @@ class Core {
 				'whitelist' => $this->get_whitelist(),
 				'safeMode'  => $this->is_safe_mode(),
 				'blocked'   => get_option( 'zenadmin_blacklist', array() ),
+				'roles'     => $roles_list,
 				'i18n'      => array(
 					'confirmTitle' => __( 'Block Element', 'zenadmin' ),
 					'confirmBtn'   => __( 'Block Forever', 'zenadmin' ),
 					'cancelBtn'    => __( 'Cancel', 'zenadmin' ),
 					'labelLabel'   => __( 'Label (for your reference)', 'zenadmin' ),
 					'sessionOnly'  => __( 'Hide for this session only', 'zenadmin' ),
+					'hiddenFor'    => __( 'Hide for roles:', 'zenadmin' ),
 				),
 			)
 		);
@@ -84,12 +90,27 @@ class Core {
 			return;
 		}
 
-		$selectors = array_map(
-			function ( $item ) {
-				return $item['selector'];
-			},
-			$blacklist
-		);
+		// Role-Based Visibility Engine
+		$user       = wp_get_current_user();
+		$user_roles = (array) $user->roles;
+		$selectors  = array();
+
+		foreach ( $blacklist as $entry ) {
+			// If no hidden_for defined (legacy), treat as global (hide for all)
+			if ( ! isset( $entry['hidden_for'] ) || empty( $entry['hidden_for'] ) ) {
+				$selectors[] = $entry['selector'];
+				continue;
+			}
+
+			// Check if user has any role in the hidden_for list
+			if ( array_intersect( $user_roles, $entry['hidden_for'] ) ) {
+				$selectors[] = $entry['selector'];
+			}
+		}
+
+		if ( empty( $selectors ) ) {
+			return;
+		}
 
 		// Group selectors
 		$css = implode( ', ', $selectors ) . ' { display: none !important; }';
@@ -198,6 +219,15 @@ class Core {
 
 		$selector = isset( $_POST['selector'] ) ? sanitize_text_field( wp_unslash( $_POST['selector'] ) ) : '';
 		$label    = isset( $_POST['label'] ) ? sanitize_text_field( wp_unslash( $_POST['label'] ) ) : '';
+		
+		// Role-Based Visibility Engine: Parse hidden_for array
+		$hidden_for_raw = isset( $_POST['hidden_for'] ) ? sanitize_text_field( wp_unslash( $_POST['hidden_for'] ) ) : '[]';
+		$hidden_for     = json_decode( $hidden_for_raw, true );
+		if ( ! is_array( $hidden_for ) ) {
+			$hidden_for = array();
+		}
+		// Sanitize role slugs
+		$hidden_for = array_map( 'sanitize_key', $hidden_for );
 
 		if ( empty( $selector ) ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid selector', 'zenadmin' ) ) );
@@ -220,6 +250,7 @@ class Core {
 		$blacklist[ $hash ] = array(
 			'selector'   => $selector,
 			'label'      => $label ?: $selector,
+			'hidden_for' => $hidden_for,
 			'created_at' => current_time( 'mysql' ),
 			'user_id'    => get_current_user_id(),
 		);
@@ -255,6 +286,42 @@ class Core {
 		}
 
 		wp_send_json_error( array( 'message' => __( 'Block not found', 'zenadmin' ) ) );
+	}
+
+	/**
+	 * AJAX: Update roles for an existing block.
+	 */
+	public function ajax_update_block_roles() {
+		check_ajax_referer( 'zenadmin_nonce', 'security' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'zenadmin' ) ) );
+		}
+
+		$hash = isset( $_POST['id'] ) ? sanitize_text_field( wp_unslash( $_POST['id'] ) ) : '';
+		
+		// Parse hidden_for array
+		$hidden_for_raw = isset( $_POST['hidden_for'] ) ? sanitize_text_field( wp_unslash( $_POST['hidden_for'] ) ) : '[]';
+		$hidden_for     = json_decode( $hidden_for_raw, true );
+		if ( ! is_array( $hidden_for ) ) {
+			$hidden_for = array();
+		}
+		$hidden_for = array_map( 'sanitize_key', $hidden_for );
+
+		if ( empty( $hash ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid block ID', 'zenadmin' ) ) );
+		}
+
+		$blacklist = get_option( 'zenadmin_blacklist', array() );
+
+		if ( ! isset( $blacklist[ $hash ] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Block not found', 'zenadmin' ) ) );
+		}
+
+		$blacklist[ $hash ]['hidden_for'] = $hidden_for;
+		update_option( 'zenadmin_blacklist', $blacklist );
+
+		wp_send_json_success( array( 'message' => __( 'Roles updated', 'zenadmin' ) ) );
 	}
 
 	/**
