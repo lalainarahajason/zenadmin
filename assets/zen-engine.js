@@ -137,7 +137,22 @@
 
             try {
                 const selector = this.generateSelector(this.currentTarget);
+
+                // 1. Conflict Prevention: Specificity Check
                 const count = document.querySelectorAll(selector).length;
+                let showWarning = false;
+                let warningMsg = '';
+
+                if (count > 1) {
+                    showWarning = true;
+                    warningMsg = `Attention: This selector matches ${count} elements. Do you want to block all of them?`;
+                }
+
+                // 2. Redundancy Check: Is it already inside a blocked element?
+                // This is hard to check perfectly without list of all blocked selectors locally, 
+                // but we can check if it matches the 'display: none' style if injected, 
+                // but since we are in "Zen Mode", styles might not be applied or we might be looking at raw DOM.
+                // We'll skip complex redundancy check for now as it requires syncing blacklist to JS.
 
                 // Whitelist Check
                 if (this.isWhitelisted(selector, this.currentTarget)) {
@@ -148,20 +163,18 @@
                 ZenAdminModal.open({
                     title: this.config.i18n.confirmTitle,
                     selector: selector,
-                    label: this.getClassLabel(this.currentTarget), // Improved label guess
-                    showWarning: count > 5,
-                    warning: `Warning: This selector matches ${count} elements on the page.`,
+                    label: this.getClassLabel(this.currentTarget),
+                    showWarning: showWarning,
+                    warning: warningMsg,
                     i18n: this.config.i18n,
                     onConfirm: (data) => {
                         this.saveBlock(selector, data);
                     },
-                    onCancel: () => {
-                        // Maybe just close
-                    }
+                    onCancel: () => { }
                 });
             } catch (err) {
                 console.error('ZenAdmin Selection Error:', err);
-                alert('Error generating selector for this element. Please check the console.');
+                alert('Error generating selector. Check console.');
             }
         },
 
@@ -169,73 +182,104 @@
             if (el.tagName.toLowerCase() === 'html') return 'html';
             if (el.tagName.toLowerCase() === 'body') return 'body';
 
-            // 1. HREF Strategy: If it's a link (or inside one), use the HREF for precision
-            const link = el.closest('a');
-            if (link && link.href) {
-                const hrefAttr = link.getAttribute('href');
-                if (hrefAttr && hrefAttr !== '#') {
-                    // JSON.stringify handles generic string escaping, but for CSS selector attribute matching
-                    // we mainly need to escape quotes.
-                    let hrefSelector = `a[href="${hrefAttr.replace(/"/g, '\\"')}"]`;
-
-                    try {
-                        if (document.querySelectorAll(hrefSelector).length === 1) {
-                            return hrefSelector;
-                        }
-                    } catch (e) {
-                        // If selector invalid, fall through
-                    }
-                }
-            }
-
-            // 2. ID Strategy
-            if (el.id && !/\d/.test(el.id)) {
-                // Use CSS.escape if available, otherwise fallback (mostly for modern browsers)
+            // 1. ID Strategy (Strict Filter)
+            // Reject generated IDs like 'el-1234', 'ui-id-5'
+            if (el.id && !/(\d{3,}|[-_]\d+)/.test(el.id)) {
                 const safeId = window.CSS && window.CSS.escape ? window.CSS.escape(el.id) : el.id;
                 return '#' + safeId;
             }
 
-            // 3. Path Strategy with nth-of-type for specificity
+            // 2. HREF Surgical Strategy (for links or inside links)
+            const link = el.closest('a');
+            if (link && link.href) {
+                const url = new URL(link.href);
+                const params = new URLSearchParams(url.search);
+
+                // WordPress Admin typical params: 'page', 'action', 'tab'
+                if (params.has('page')) {
+                    return `a[href*="page=${params.get('page')}"]`;
+                }
+                if (params.has('action')) {
+                    return `a[href*="action=${params.get('action')}"]`;
+                }
+                // Fallback to minimal href match if specific
+                // Avoid matching '#' or 'admin.php' generic
+                const hrefAttr = link.getAttribute('href');
+                if (hrefAttr && hrefAttr !== '#' && hrefAttr.length > 5) {
+                    return `a[href="${hrefAttr.replace(/"/g, '\\"')}"]`;
+                }
+            }
+
+            // 3. Class Combinations
+            if (el.className && typeof el.className === 'string') {
+                const classes = el.className.split(/\s+/).filter(c => {
+                    return !c.startsWith('zenadmin-') && !c.startsWith('ng-') && c.length > 2 && !/^\d+$/.test(c);
+                });
+
+                if (classes.length > 0) {
+                    // If we have a specific class (not generic like 'wrap', 'notice'), use it.
+                    // Heuristic: generic classes usually simple words. Specific often dashed.
+                    // For now, join all non-blacklisted classes.
+                    const safeClasses = classes.map(c => window.CSS && window.CSS.escape ? window.CSS.escape(c) : c);
+
+                    // If only 1 class and it looks generic (no dashes, < 6 chars), try to add parent
+                    if (classes.length === 1 && classes[0].indexOf('-') === -1 && classes[0].length < 6) {
+                        // Fallthrough to structural or parent combination
+                    } else {
+                        return '.' + safeClasses.join('.');
+                    }
+                }
+            }
+
+            // 4. Attribute Matching (src, name, data-*)
+            const attrs = ['name', 'data-id', 'data-slug', 'src'];
+            for (let attr of attrs) {
+                if (el.hasAttribute(attr)) {
+                    const val = el.getAttribute(attr);
+                    if (val && val.length > 2) {
+                        return `${el.tagName.toLowerCase()}[${attr}="${val.replace(/"/g, '\\"')}"]`;
+                    }
+                }
+            }
+
+            // 5. Structural Fallback (nth-of-type) - The "Last Resort"
+            // We walk up to find a stable parent, then use path
             let path = [];
             let current = el;
+            let depth = 0;
+            const maxDepth = 5; // Don't go too deep
 
-            while (current && current.nodeType === Node.ELEMENT_NODE && current.tagName.toLowerCase() !== 'html') {
-                let nodeSelector = current.nodeName.toLowerCase();
+            while (current && current.nodeType === Node.ELEMENT_NODE && current.tagName.toLowerCase() !== 'html' && depth < maxDepth) {
+                let nodeSelector = current.tagName.toLowerCase();
 
-                if (current.id && !/\d/.test(current.id)) {
-                    const safeId = window.CSS && window.CSS.escape ? window.CSS.escape(current.id) : current.id;
-                    nodeSelector += '#' + safeId;
+                if (current.id && !/(\d{3,}|[-_]\d+)/.test(current.id)) {
+                    nodeSelector = '#' + (window.CSS && window.CSS.escape ? window.CSS.escape(current.id) : current.id);
                     path.unshift(nodeSelector);
-                    break; // Strong anchor found
-                } else {
-                    // Classes
-                    if (current.className && typeof current.className === 'string' && current.className.trim() !== '') {
-                        const classes = current.className.split(/\s+/).filter(c => {
-                            return !c.startsWith('zenadmin-') && !c.startsWith('ng-') && c.length > 2;
-                        });
-
-                        if (classes.length > 0) {
-                            // Escape classes for safety (e.g. tailwind hover:text-white -> hover\:text-white)
-                            const safeClasses = classes.map(c => window.CSS && window.CSS.escape ? window.CSS.escape(c) : c);
-                            nodeSelector += '.' + safeClasses.join('.');
-                        }
+                    break; // Found anchor
+                } else if (current.className) {
+                    const classes = current.className.split(/\s+/).filter(c => !c.startsWith('zenadmin-') && c.length > 2);
+                    if (classes.length > 0) {
+                        nodeSelector += '.' + classes.map(c => window.CSS && window.CSS.escape ? window.CSS.escape(c) : c).join('.');
                     }
+                }
 
-                    // Sibling Specificity (nth-of-type)
-                    const parent = current.parentNode;
-                    if (parent) {
-                        const siblings = Array.from(parent.children).filter(c => c.tagName === current.tagName);
-                        if (siblings.length > 1) {
-                            const index = siblings.indexOf(current) + 1;
-                            nodeSelector += `:nth-of-type(${index})`;
-                        }
+                if (current !== el) { // Only use nth-of-type for the target or generic parents
+                    // actually, let's keep it simple: just tag+class
+                }
+
+                // Add nth-of-type if needed for uniqueness among siblings
+                const parent = current.parentNode;
+                if (parent && parent.children) {
+                    const siblings = Array.from(parent.children).filter(c => c.tagName === current.tagName);
+                    if (siblings.length > 1) {
+                        const index = siblings.indexOf(current) + 1;
+                        nodeSelector += `:nth-of-type(${index})`;
                     }
                 }
 
                 path.unshift(nodeSelector);
                 current = current.parentNode;
-
-                if (current && current.tagName.toLowerCase() === 'html') break;
+                depth++;
             }
 
             return path.join(' > ');

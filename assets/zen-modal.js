@@ -3,18 +3,18 @@
  * Handles the custom interaction dialog.
  */
 
-(function(window, document) {
+(function (window, document) {
     'use strict';
 
     const ZenModal = {
         overlay: null,
         modal: null,
         lastFocusedElement: null,
-        
+
         /**
          * Initialize the modal HTML structure
          */
-        init: function() {
+        init: function () {
             if (this.overlay) return;
 
             // Create Overlay
@@ -39,8 +39,14 @@
             });
 
             document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && this.isOpen()) {
+                if (!this.isOpen()) return;
+
+                if (e.key === 'Escape') {
                     this.close();
+                }
+
+                if (e.key === 'Tab') {
+                    this.handleTab(e);
                 }
             });
         },
@@ -49,7 +55,7 @@
          * Open the modal with configuration
          * @param {Object} config 
          */
-        open: function(config) {
+        open: function (config) {
             this.init();
             this.lastFocusedElement = document.activeElement;
 
@@ -106,7 +112,7 @@
             document.getElementById('zenadmin-confirm-btn').addEventListener('click', () => {
                 const label = document.getElementById('zenadmin-label-input').value;
                 const isSession = document.getElementById('zenadmin-session-only').checked;
-                
+
                 if (config.onConfirm) {
                     config.onConfirm({
                         label: label,
@@ -126,7 +132,7 @@
         /**
          * Close the modal
          */
-        close: function() {
+        close: function () {
             if (!this.overlay) return;
             this.overlay.style.display = 'none';
             this.overlay.setAttribute('aria-hidden', 'true');
@@ -138,11 +144,11 @@
         /**
          * Check if modal is open
          */
-        isOpen: function() {
+        isOpen: function () {
             return this.overlay && this.overlay.style.display === 'flex';
         },
 
-        escapeHtml: function(text) {
+        escapeHtml: function (text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
