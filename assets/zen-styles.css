@@ -223,3 +223,27 @@ body.zenadmin-mode-active * {
 .zenadmin-role-checkbox input[type="checkbox"] {
     margin: 0;
 }
+
+/* Settings Page Inline Roles */
+.zenadmin-roles-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+}
+
+.zenadmin-role-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.zenadmin-role-inline input[type="checkbox"] {
+    margin: 0;
+}
+
+.zenadmin-blocks-table td {
+    vertical-align: top;
+    padding: 10px 8px;
+}

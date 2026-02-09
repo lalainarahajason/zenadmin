@@ -121,29 +121,47 @@ class Settings {
 	 */
 	private function render_blocks_tab() {
 		$blacklist = get_option( 'zenadmin_blacklist', array() );
+		global $wp_roles;
+		$all_roles = wp_list_pluck( $wp_roles->roles, 'name' );
 		?>
 		<div class="zenadmin-card">
 			<h2><?php esc_html_e( 'Currently Blocked Elements', 'zenadmin' ); ?></h2>
 			<?php if ( empty( $blacklist ) ) : ?>
 				<p><?php esc_html_e( 'No elements blocked yet. Use the "Zen Mode" toggle in the admin bar to start cleaning up!', 'zenadmin' ); ?></p>
 			<?php else : ?>
-				<table class="wp-list-table widefat fixed striped">
+				<table class="wp-list-table widefat fixed striped zenadmin-blocks-table">
 					<thead>
 						<tr>
-							<th><?php esc_html_e( 'Label', 'zenadmin' ); ?></th>
-							<th><?php esc_html_e( 'Selector', 'zenadmin' ); ?></th>
-							<th><?php esc_html_e( 'Date Added', 'zenadmin' ); ?></th>
-							<th><?php esc_html_e( 'Actions', 'zenadmin' ); ?></th>
+							<th style="width:15%"><?php esc_html_e( 'Label', 'zenadmin' ); ?></th>
+							<th style="width:25%"><?php esc_html_e( 'Selector', 'zenadmin' ); ?></th>
+							<th style="width:35%"><?php esc_html_e( 'Hidden For', 'zenadmin' ); ?></th>
+							<th style="width:10%"><?php esc_html_e( 'Date', 'zenadmin' ); ?></th>
+							<th style="width:15%"><?php esc_html_e( 'Actions', 'zenadmin' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
-						<?php foreach ( $blacklist as $hash => $item ) : ?>
-							<tr>
+						<?php foreach ( $blacklist as $hash => $item ) : 
+							$hidden_for = isset( $item['hidden_for'] ) ? (array) $item['hidden_for'] : array_keys( $all_roles );
+						?>
+							<tr data-id="<?php echo esc_attr( $hash ); ?>">
 								<td><?php echo esc_html( $item['label'] ); ?></td>
-								<td><code><?php echo esc_html( $item['selector'] ); ?></code></td>
-								<td><?php echo esc_html( $item['created_at'] ); ?></td>
+								<td><code style="font-size:11px;word-break:break-all;"><?php echo esc_html( $item['selector'] ); ?></code></td>
 								<td>
-									<button class="button zenadmin-delete-btn" data-id="<?php echo esc_attr( $hash ); ?>"><?php esc_html_e( 'Delete', 'zenadmin' ); ?></button>
+									<div class="zenadmin-roles-inline">
+										<?php foreach ( $all_roles as $slug => $name ) : 
+											$checked = in_array( $slug, $hidden_for, true ) ? 'checked' : '';
+										?>
+											<label class="zenadmin-role-inline">
+												<input type="checkbox" name="hidden_for_<?php echo esc_attr( $hash ); ?>[]" value="<?php echo esc_attr( $slug ); ?>" <?php echo $checked; ?>>
+												<span><?php echo esc_html( $name ); ?></span>
+											</label>
+										<?php endforeach; ?>
+									</div>
+								</td>
+								<td><?php echo esc_html( date_i18n( 'Y-m-d', strtotime( $item['created_at'] ) ) ); ?></td>
+								<td>
+									<button class="button button-small zenadmin-update-roles-btn" data-id="<?php echo esc_attr( $hash ); ?>"><?php esc_html_e( 'Update', 'zenadmin' ); ?></button>
+									<button class="button button-small zenadmin-delete-btn" data-id="<?php echo esc_attr( $hash ); ?>"><?php esc_html_e( 'Delete', 'zenadmin' ); ?></button>
 								</td>
 							</tr>
 						<?php endforeach; ?>
@@ -151,6 +169,7 @@ class Settings {
 				</table>
 				<script>
 				jQuery(document).ready(function($) {
+					// Delete handler
 					$('.zenadmin-delete-btn').on('click', function(e) {
 						e.preventDefault();
 						if (!confirm('<?php esc_html_e( 'Are you sure?', 'zenadmin' ); ?>')) return;
@@ -165,6 +184,36 @@ class Settings {
 						}, function(response) {
 							if (response.success) {
 								btn.closest('tr').fadeOut();
+							} else {
+								alert(response.data.message);
+							}
+						});
+					});
+
+					// Update roles handler
+					$('.zenadmin-update-roles-btn').on('click', function(e) {
+						e.preventDefault();
+						var btn = $(this);
+						var id = btn.data('id');
+						var row = btn.closest('tr');
+						var hiddenFor = [];
+						
+						row.find('input[name="hidden_for_' + id + '[]"]:checked').each(function() {
+							hiddenFor.push($(this).val());
+						});
+						
+						btn.prop('disabled', true).text('<?php esc_html_e( 'Saving...', 'zenadmin' ); ?>');
+						
+						$.post(ajaxurl, {
+							action: 'zenadmin_update_block_roles',
+							security: '<?php echo wp_create_nonce( 'zenadmin_nonce' ); ?>',
+							id: id,
+							hidden_for: JSON.stringify(hiddenFor)
+						}, function(response) {
+							btn.prop('disabled', false).text('<?php esc_html_e( 'Update', 'zenadmin' ); ?>');
+							if (response.success) {
+								btn.text('<?php esc_html_e( 'Saved!', 'zenadmin' ); ?>');
+								setTimeout(function() { btn.text('<?php esc_html_e( 'Update', 'zenadmin' ); ?>'); }, 1500);
 							} else {
 								alert(response.data.message);
 							}
