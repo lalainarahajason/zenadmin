@@ -3,7 +3,7 @@
  * Plugin Name: ZenAdmin
  * Description: Clean up your WordPress admin interface by hiding annoying elements with a click. Enhanced Edition.
  * Version: 1.0.0
- * Author: Antigravity
+ * Author: Rahajason
  * Text Domain: zenadmin
  * Domain Path: /languages
  * License: GPLv2 or later

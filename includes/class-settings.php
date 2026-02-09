@@ -135,8 +135,8 @@ class Settings {
 							<th style="width:20%"><?php esc_html_e( 'Label', 'zenadmin' ); ?></th>
 							<th style="width:35%"><?php esc_html_e( 'Selector', 'zenadmin' ); ?></th>
 							<th style="width:15%"><?php esc_html_e( 'Hidden For', 'zenadmin' ); ?></th>
-							<th style="width:10%"><?php esc_html_e( 'Date', 'zenadmin' ); ?></th>
 							<th style="width:10%"><?php esc_html_e( 'Actions', 'zenadmin' ); ?></th>
+							<th style="width:10%"><?php esc_html_e( 'Date', 'zenadmin' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -161,10 +161,10 @@ class Settings {
 										<span class="dashicons dashicons-edit" style="font-size:14px;vertical-align:middle;"></span>
 									</a>
 								</td>
-								<td><?php echo esc_html( date_i18n( 'Y-m-d', strtotime( $item['created_at'] ) ) ); ?></td>
 								<td>
 									<button class="button button-small button-link-delete zenadmin-delete-btn" data-id="<?php echo esc_attr( $hash ); ?>"><?php esc_html_e( 'Delete', 'zenadmin' ); ?></button>
 								</td>
+								<td><?php echo esc_html( date_i18n( 'Y-m-d H:i:s', strtotime( $item['created_at'] ) ) ); ?></td>
 							</tr>
 						<?php endforeach; ?>
 					</tbody>
