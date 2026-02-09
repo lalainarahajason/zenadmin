@@ -63,20 +63,39 @@
 
 ### AS1: Intelligent Selector Heuristics
 
-* **Stability First:** The engine must crawl the DOM tree upwards to find the most reliable selector.
-* **Priority:** 
-  1. Static `ID` (if it doesn't look auto-generated like `id="notice-123"`).
-  2. Specific Classes (e.g., `.yoast-notice`, `.elementor-ad`).
-  3. Attribute Selectors (e.g., `[data-plugin-id]`).
-  4. Combined selectors for context (e.g., `#wpbody .custom-notice`).
-* **Restriction:** Never use generic WP classes (`.notice`, `.error`, `.updated`) alone. They must be combined with a unique parent or specific sibling class.
-* **Validation:** Before accepting a selector, check its **specificity score**:
-  * If it matches more than 10 elements on the page → Flag as "Too broad" and ask user to refine.
-  * If it contains only tag names (e.g., `div > span`) → Reject and suggest adding classes/IDs.
+*   **Stability First:** The engine must crawl the DOM tree upwards to find the most reliable selector.
+*   **Priority:** 
+    1.  Static `ID` (if it doesn't look auto-generated like `id="notice-123"`).
+    2.  Specific Classes (e.g., `.yoast-notice`, `.elementor-ad`).
+    3.  Attribute Selectors (e.g., `[data-plugin-id]`).
+    4.  Combined selectors for context (e.g., `#wpbody .custom-notice`).
+*   **Restriction:** Never use generic WP classes (`.notice`, `.error`, `.updated`) alone. They must be combined with a unique parent or specific sibling class.
+*   **Validation:** Before accepting a selector, check its **specificity score**:
+    *   If it matches more than 10 elements on the page → Flag as "Too broad" and ask user to refine.
+    *   If it contains only tag names (e.g., `div > span`) → Reject and suggest adding classes/IDs.
+
+### AS1.1: Precise Targeting Strategy (Updated)
+
+*   **HREF Strategy (Primary for Links):**
+    *   If an element is a link (`<a>`) or inside one, prioritize the `href` attribute.
+    *   Selector: `a[href="admin.php?page=zenadmin"]`.
+    *   Rationale: Allows surgical blocking of specific submenu items without affecting siblings.
+*   **ID Strategy:**
+    *   Use `ID` if available and authentic (no digits like `id="el-1234"`).
+    *   **Critical:** Always use `CSS.escape()` on IDs to handle special characters (e.g. `id="my:id"`).
+*   **Structural Fallback (nth-of-type):**
+    *   If no ID or unique Class/HREF is found, use the tag path with `:nth-of-type`.
+    *   Example: `div#wpbody-content > div.wrap > ul > li:nth-of-type(3)`.
+    *   Rationale: Ensures we target the *exact* visual element user clicked, even if it lacks unique identifiers.
+*   **Class Safety:**
+    *   Filter out generic classes (`zenadmin-*`, `ng-*`).
+    *   **Critical:** Always use `CSS.escape()` on class names to handle Tailwind/framework special chars (e.g. `hover:bg-red`).
 
 ### AS2: Emergency Access (Safe Mode) — Enhanced
 
-* **Requirement:** If `$_GET['zenadmin_safe_mode'] === '1'`, the plugin MUST NOT inject any blocking CSS.
+* **Requirement:** If `$_GET['zenadmin_safe_mode'] === '1'`, the plugin MUST NOT inject any blocking CSS **AND** must disable all JS session blocks.
+* **Smart Whitelist Logic:**
+  * **New Logic:** `blockedElement.matches(whitelistSelector)` (Correct: Only prevents blocking the *container itself*).
 * **Hardcoded Whitelist (Extended):** Prohibit blocking of:
   * `#wpadminbar`
   * `#wp-admin-bar-my-account`
