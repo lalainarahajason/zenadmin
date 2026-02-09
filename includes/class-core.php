@@ -20,6 +20,11 @@ class Core {
 	 * Constructor.
 	 */
 	public function __construct() {
+		// Kill Switch: Emergency Disable (defined in wp-config.php)
+		if ( defined( 'ZENADMIN_DISABLE' ) && ZENADMIN_DISABLE ) {
+			return;
+		}
+
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_head', array( $this, 'inject_styles' ), 999 );
 		add_action( 'admin_bar_menu', array( $this, 'admin_bar_menu' ), 100 );
@@ -200,6 +205,12 @@ class Core {
 
 		// Conflict Check
 		$blacklist = get_option( 'zenadmin_blacklist', array() );
+		
+		// Limit Check (Hardening Section 4: Limit increased to 200)
+		if ( count( $blacklist ) >= 200 ) {
+			wp_send_json_error( array( 'message' => __( 'Limit reached (200). Please delete some blocks.', 'zenadmin' ) ) );
+		}
+
 		$hash      = hash( 'sha256', $selector . 'zenadmin' ); // Simple hash for ID
 
 		if ( isset( $blacklist[ $hash ] ) ) {

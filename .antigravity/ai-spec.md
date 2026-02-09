@@ -13,7 +13,13 @@
 
 ## 2. Functional Requirements
 
-* **FR1 (Target Mode):** Toggle in WP Admin Bar to activate/deactivate "Selection Mode".
+* **FR1 (Admin Bar Control):** Dropdown menu "ZenAdmin" containing:
+  * **Toggle Zen Mode:** Activate/Deactivate selection mode.
+  * **Settings:** Quick link to plugin configuration.
+  * **Safe Mode:** Toggle to Activate/Exit Safe Mode.
+  * **Troubleshooting:**
+    * "Clear Session Blocks" (Immediate JS clear).
+    * "Reset All Settings" (Full wipe of DB + Session with confirmation).
 * **FR2 (Interaction):** 
   * **Hover:** Element gets a purple border (`#6e58ff`) and a temporary overlay to prevent interaction with the element itself.
   * **Click:** Custom WordPress-style modal (not native `confirm()`) with:
@@ -26,6 +32,7 @@
 * **FR4 (Persistence):** 
   * Store blocked selectors in `wp_options` under `zenadmin_blacklist`.
   * Store session-only blocks in JavaScript `sessionStorage`.
+  * **Global Reset:** Ability to wipe both `zenadmin_blacklist` (DB) and `sessionStorage` (Client) simultaneously via Admin Bar or Settings.
 * **FR5 (Execution):** Inject `<style>` in `admin_head` with optimized grouped selectors using `display: none !important;` for all stored selectors.
 * **FR6 (Templates):** Provide pre-configured blocking templates for common annoyances (Yoast ads, Elementor upsells, generic plugin nags).
 
@@ -94,6 +101,9 @@
 ### AS2: Emergency Access (Safe Mode) — Enhanced
 
 * **Requirement:** If `$_GET['zenadmin_safe_mode'] === '1'`, the plugin MUST NOT inject any blocking CSS **AND** must disable all JS session blocks.
+* **Access:** 
+  * **URL:** `?zenadmin_safe_mode=1`
+  * **UI:** Admin Bar > ZenAdmin > Safe Mode
 * **Smart Whitelist Logic:**
   * **New Logic:** `blockedElement.matches(whitelistSelector)` (Correct: Only prevents blocking the *container itself*).
 * **Hardcoded Whitelist (Extended):** Prohibit blocking of:
