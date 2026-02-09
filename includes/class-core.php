@@ -102,15 +102,81 @@ class Core {
 			return;
 		}
 
+		// Parent Node
 		$wp_admin_bar->add_node(
 			array(
-				'id'    => 'zenadmin-toggle',
-				'title' => '<span class="ab-icon dashicons dashicons-visibility"></span> ' . __( 'Zen Mode', 'zenadmin' ),
-				'href'  => '#',
-				'meta'  => array(
+				'id'    => 'zenadmin-parent',
+				'title' => '<span class="ab-icon dashicons dashicons-visibility"></span> ' . __( 'ZenAdmin', 'zenadmin' ),
+				'href'  => admin_url( 'admin.php?page=zenadmin' ),
+			)
+		);
+
+		// Child Node: Toggle
+		$wp_admin_bar->add_node(
+			array(
+				'parent' => 'zenadmin-parent',
+				'id'     => 'zenadmin-toggle',
+				'title'  => __( 'Toggle Zen Mode', 'zenadmin' ),
+				'href'   => '#',
+				'meta'   => array(
 					'class'   => 'zenadmin-toggle-btn',
 					'onclick' => 'return false;', // Handled by JS
 				),
+			)
+		);
+
+		// Child Node: Settings
+		$wp_admin_bar->add_node(
+			array(
+				'parent' => 'zenadmin-parent',
+				'id'     => 'zenadmin-settings',
+				'title'  => __( 'Settings', 'zenadmin' ),
+				'href'   => admin_url( 'options-general.php?page=zenadmin' ),
+			)
+		);
+
+		// Child Node: Safe Mode
+		$is_safe_mode = isset( $_GET['zenadmin_safe_mode'] ) && '1' === $_GET['zenadmin_safe_mode'];
+		if ( ! $is_safe_mode ) {
+			$wp_admin_bar->add_node(
+				array(
+					'parent' => 'zenadmin-parent',
+					'id'     => 'zenadmin-safe-mode',
+					'title'  => __( 'Activate Safe Mode', 'zenadmin' ),
+					'href'   => add_query_arg( 'zenadmin_safe_mode', '1' ),
+					'meta'   => array( 'class' => 'zenadmin-danger-item' ),
+				)
+			);
+		} else {
+			$wp_admin_bar->add_node(
+				array(
+					'parent' => 'zenadmin-parent',
+					'id'     => 'zenadmin-exit-safe-mode',
+					'title'  => __( 'Exit Safe Mode', 'zenadmin' ),
+					'href'   => remove_query_arg( 'zenadmin_safe_mode' ),
+				)
+			);
+		}
+
+		// Child Node: Clear Session
+		$wp_admin_bar->add_node(
+			array(
+				'parent' => 'zenadmin-parent',
+				'id'     => 'zenadmin-clear-session',
+				'title'  => __( 'Clear Session Blocks', 'zenadmin' ),
+				'href'   => '#',
+			)
+		);
+
+		// Child Node: Reset All (Danger)
+		$reset_url = wp_nonce_url( admin_url( 'admin-post.php?action=zenadmin_reset_all' ), 'zenadmin_reset_all' );
+		$wp_admin_bar->add_node(
+			array(
+				'parent' => 'zenadmin-parent',
+				'id'     => 'zenadmin-reset-all',
+				'title'  => __( 'Reset All Settings', 'zenadmin' ),
+				'href'   => $reset_url,
+				'meta'   => array( 'class' => 'zenadmin-reset-item' ),
 			)
 		);
 	}
