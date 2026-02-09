@@ -1,0 +1,196 @@
+/**
+ * ZenAdmin Styles
+ */
+
+/* Hover Overlay */
+.zenadmin-hover-overlay {
+    position: absolute;
+    background: rgba(110, 88, 255, 0.1);
+    border: 2px solid #6e58ff;
+    z-index: 999999;
+    pointer-events: none;
+    /* Let clicks pass through to document handler */
+    transition: all 0.1s ease;
+    box-shadow: 0 0 10px rgba(110, 88, 255, 0.3);
+    border-radius: 4px;
+}
+
+/* Modal Overlay */
+.zenadmin-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(2px);
+}
+
+/* Modal Content */
+.zenadmin-modal {
+    background: #fff;
+    width: 500px;
+    max-width: 90%;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    animation: zenadmin-pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+@keyframes zenadmin-pop {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.zenadmin-modal h2 {
+    margin-top: 0;
+    color: #1d2327;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.zenadmin-modal h2 .dashicons {
+    color: #6e58ff;
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+}
+
+.zenadmin-modal-body {
+    margin: 20px 0;
+}
+
+.zenadmin-field {
+    margin-bottom: 15px;
+}
+
+.zenadmin-field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #3c434a;
+}
+
+.zenadmin-field input[type="text"] {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.zenadmin-field code {
+    display: block;
+    background: #f0f0f1;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: monospace;
+    word-break: break-all;
+    font-size: 12px;
+    color: #646970;
+}
+
+.zenadmin-warning {
+    background: #fcf0f1;
+    border-left: 4px solid #d63638;
+    padding: 12px;
+    color: #d63638;
+    margin-bottom: 15px;
+    font-size: 13px;
+    display: none;
+}
+
+.zenadmin-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 24px;
+    border-top: 1px solid #f0f0f1;
+    padding-top: 15px;
+}
+
+.zenadmin-btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: none;
+}
+
+.zenadmin-btn-secondary {
+    background: transparent;
+    color: #2271b1;
+    border: 1px solid transparent;
+}
+
+.zenadmin-btn-secondary:hover {
+    background: #f0f0f1;
+    color: #135e96;
+}
+
+.zenadmin-btn-primary {
+    background: #2271b1;
+    color: white;
+}
+
+.zenadmin-btn-primary:hover {
+    background: #135e96;
+}
+
+.zenadmin-btn-danger {
+    background: #d63638;
+    color: white;
+}
+
+.zenadmin-btn-danger:hover {
+    background: #a32224;
+}
+
+/* Toggle Logic */
+body.zenadmin-mode-active {
+    cursor: crosshair !important;
+}
+
+body.zenadmin-mode-active * {
+    /* Prevent clicks on links logic handled in JS, 
+       but we want hover effects.
+       Actually, pointer-events: none on * might break detection.
+       JS will handle interception. */
+}
+
+/* Settings Page */
+.zenadmin-card {
+    position: relative;
+    margin-top: 20px;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+}
+
+.zenadmin-card h2 {
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f1;
+    margin-bottom: 20px;
+}
