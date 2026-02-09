@@ -132,43 +132,128 @@ class Settings {
 				<table class="wp-list-table widefat fixed striped zenadmin-blocks-table">
 					<thead>
 						<tr>
-							<th style="width:15%"><?php esc_html_e( 'Label', 'zenadmin' ); ?></th>
-							<th style="width:25%"><?php esc_html_e( 'Selector', 'zenadmin' ); ?></th>
-							<th style="width:35%"><?php esc_html_e( 'Hidden For', 'zenadmin' ); ?></th>
+							<th style="width:20%"><?php esc_html_e( 'Label', 'zenadmin' ); ?></th>
+							<th style="width:35%"><?php esc_html_e( 'Selector', 'zenadmin' ); ?></th>
+							<th style="width:15%"><?php esc_html_e( 'Hidden For', 'zenadmin' ); ?></th>
 							<th style="width:10%"><?php esc_html_e( 'Date', 'zenadmin' ); ?></th>
-							<th style="width:15%"><?php esc_html_e( 'Actions', 'zenadmin' ); ?></th>
+							<th style="width:10%"><?php esc_html_e( 'Actions', 'zenadmin' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
 						<?php foreach ( $blacklist as $hash => $item ) : 
 							$hidden_for = isset( $item['hidden_for'] ) ? (array) $item['hidden_for'] : array_keys( $all_roles );
+							$role_count = count( $hidden_for );
+							$total_roles = count( $all_roles );
 						?>
-							<tr data-id="<?php echo esc_attr( $hash ); ?>">
+							<tr data-id="<?php echo esc_attr( $hash ); ?>" data-roles="<?php echo esc_attr( wp_json_encode( $hidden_for ) ); ?>">
 								<td><?php echo esc_html( $item['label'] ); ?></td>
 								<td><code style="font-size:11px;word-break:break-all;"><?php echo esc_html( $item['selector'] ); ?></code></td>
 								<td>
-									<div class="zenadmin-roles-inline">
-										<?php foreach ( $all_roles as $slug => $name ) : 
-											$checked = in_array( $slug, $hidden_for, true ) ? 'checked' : '';
+									<a href="#" class="zenadmin-edit-roles-link" data-id="<?php echo esc_attr( $hash ); ?>">
+										<?php 
+										if ( $role_count === $total_roles ) {
+											esc_html_e( 'All roles', 'zenadmin' );
+										} else {
+											/* translators: %d: number of roles */
+											printf( esc_html__( '%d roles', 'zenadmin' ), $role_count );
+										}
 										?>
-											<label class="zenadmin-role-inline">
-												<input type="checkbox" name="hidden_for_<?php echo esc_attr( $hash ); ?>[]" value="<?php echo esc_attr( $slug ); ?>" <?php echo $checked; ?>>
-												<span><?php echo esc_html( $name ); ?></span>
-											</label>
-										<?php endforeach; ?>
-									</div>
+										<span class="dashicons dashicons-edit" style="font-size:14px;vertical-align:middle;"></span>
+									</a>
 								</td>
 								<td><?php echo esc_html( date_i18n( 'Y-m-d', strtotime( $item['created_at'] ) ) ); ?></td>
 								<td>
-									<button class="button button-small zenadmin-update-roles-btn" data-id="<?php echo esc_attr( $hash ); ?>"><?php esc_html_e( 'Update', 'zenadmin' ); ?></button>
-									<button class="button button-small zenadmin-delete-btn" data-id="<?php echo esc_attr( $hash ); ?>"><?php esc_html_e( 'Delete', 'zenadmin' ); ?></button>
+									<button class="button button-small button-link-delete zenadmin-delete-btn" data-id="<?php echo esc_attr( $hash ); ?>"><?php esc_html_e( 'Delete', 'zenadmin' ); ?></button>
 								</td>
 							</tr>
 						<?php endforeach; ?>
 					</tbody>
 				</table>
+
+				<!-- Roles Popup -->
+				<div id="zenadmin-roles-popup" class="zenadmin-roles-popup" style="display:none;">
+					<div class="zenadmin-roles-popup-content">
+						<h3><?php esc_html_e( 'Edit Roles', 'zenadmin' ); ?></h3>
+						<p class="description"><?php esc_html_e( 'Select which roles should NOT see this element:', 'zenadmin' ); ?></p>
+						<div class="zenadmin-roles-popup-list">
+							<?php foreach ( $all_roles as $slug => $name ) : ?>
+								<label class="zenadmin-role-popup-item">
+									<input type="checkbox" name="popup_hidden_for[]" value="<?php echo esc_attr( $slug ); ?>">
+									<?php echo esc_html( $name ); ?>
+								</label>
+							<?php endforeach; ?>
+						</div>
+						<div class="zenadmin-roles-popup-actions">
+							<button class="button button-primary" id="zenadmin-popup-save"><?php esc_html_e( 'Save', 'zenadmin' ); ?></button>
+							<button class="button" id="zenadmin-popup-cancel"><?php esc_html_e( 'Cancel', 'zenadmin' ); ?></button>
+						</div>
+					</div>
+				</div>
+
 				<script>
 				jQuery(document).ready(function($) {
+					var currentBlockId = null;
+
+					// Open popup
+					$('.zenadmin-edit-roles-link').on('click', function(e) {
+						e.preventDefault();
+						var row = $(this).closest('tr');
+						currentBlockId = row.data('id');
+						var roles = row.data('roles') || [];
+
+						// Reset all checkboxes
+						$('#zenadmin-roles-popup input[type="checkbox"]').prop('checked', false);
+
+						// Check the ones in hidden_for
+						roles.forEach(function(role) {
+							$('#zenadmin-roles-popup input[value="' + role + '"]').prop('checked', true);
+						});
+
+						$('#zenadmin-roles-popup').fadeIn(200);
+					});
+
+					// Cancel popup
+					$('#zenadmin-popup-cancel').on('click', function(e) {
+						e.preventDefault();
+						$('#zenadmin-roles-popup').fadeOut(200);
+						currentBlockId = null;
+					});
+
+					// Save popup
+					$('#zenadmin-popup-save').on('click', function(e) {
+						e.preventDefault();
+						if (!currentBlockId) return;
+
+						var hiddenFor = [];
+						$('#zenadmin-roles-popup input[name="popup_hidden_for[]"]:checked').each(function() {
+							hiddenFor.push($(this).val());
+						});
+
+						var btn = $(this);
+						btn.prop('disabled', true).text('<?php esc_html_e( 'Saving...', 'zenadmin' ); ?>');
+
+						$.post(ajaxurl, {
+							action: 'zenadmin_update_block_roles',
+							security: '<?php echo wp_create_nonce( 'zenadmin_nonce' ); ?>',
+							id: currentBlockId,
+							hidden_for: JSON.stringify(hiddenFor)
+						}, function(response) {
+							btn.prop('disabled', false).text('<?php esc_html_e( 'Save', 'zenadmin' ); ?>');
+							if (response.success) {
+								// Update row data
+								$('tr[data-id="' + currentBlockId + '"]').data('roles', hiddenFor);
+								// Update link text
+								var total = $('#zenadmin-roles-popup input[type="checkbox"]').length;
+								var linkText = hiddenFor.length === total ? '<?php esc_html_e( 'All roles', 'zenadmin' ); ?>' : hiddenFor.length + ' roles';
+								$('tr[data-id="' + currentBlockId + '"] .zenadmin-edit-roles-link').html(linkText + ' <span class="dashicons dashicons-edit" style="font-size:14px;vertical-align:middle;"></span>');
+								$('#zenadmin-roles-popup').fadeOut(200);
+								currentBlockId = null;
+							} else {
+								alert(response.data.message);
+							}
+						});
+					});
+
 					// Delete handler
 					$('.zenadmin-delete-btn').on('click', function(e) {
 						e.preventDefault();
@@ -190,34 +275,12 @@ class Settings {
 						});
 					});
 
-					// Update roles handler
-					$('.zenadmin-update-roles-btn').on('click', function(e) {
-						e.preventDefault();
-						var btn = $(this);
-						var id = btn.data('id');
-						var row = btn.closest('tr');
-						var hiddenFor = [];
-						
-						row.find('input[name="hidden_for_' + id + '[]"]:checked').each(function() {
-							hiddenFor.push($(this).val());
-						});
-						
-						btn.prop('disabled', true).text('<?php esc_html_e( 'Saving...', 'zenadmin' ); ?>');
-						
-						$.post(ajaxurl, {
-							action: 'zenadmin_update_block_roles',
-							security: '<?php echo wp_create_nonce( 'zenadmin_nonce' ); ?>',
-							id: id,
-							hidden_for: JSON.stringify(hiddenFor)
-						}, function(response) {
-							btn.prop('disabled', false).text('<?php esc_html_e( 'Update', 'zenadmin' ); ?>');
-							if (response.success) {
-								btn.text('<?php esc_html_e( 'Saved!', 'zenadmin' ); ?>');
-								setTimeout(function() { btn.text('<?php esc_html_e( 'Update', 'zenadmin' ); ?>'); }, 1500);
-							} else {
-								alert(response.data.message);
-							}
-						});
+					// Close popup on escape
+					$(document).on('keydown', function(e) {
+						if (e.key === 'Escape' && $('#zenadmin-roles-popup').is(':visible')) {
+							$('#zenadmin-roles-popup').fadeOut(200);
+							currentBlockId = null;
+						}
 					});
 				});
 				</script>
