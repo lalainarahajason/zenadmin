@@ -183,6 +183,43 @@
             if (el.tagName.toLowerCase() === 'html') return 'html';
             if (el.tagName.toLowerCase() === 'body') return 'body';
 
+            // 0. Admin Menu Strategy: Surgical targeting to avoid hiding parent menus
+            const adminMenuLi = el.closest('#adminmenu li');
+            if (adminMenuLi) {
+                // Check if we're inside a submenu (.wp-submenu)
+                const isInSubmenu = el.closest('.wp-submenu') !== null;
+
+                if (isInSubmenu) {
+                    // SUBMENU ITEM: Target the specific <a> link, never the parent li
+                    // This prevents hiding the entire parent menu when hiding a submenu item
+                    const link = el.closest('a');
+                    if (link) {
+                        const hrefAttr = link.getAttribute('href');
+                        if (hrefAttr && hrefAttr !== '#' && hrefAttr.length > 3) {
+                            // Use a[href="..."] selector for submenu items
+                            return `#adminmenu .wp-submenu a[href="${hrefAttr.replace(/"/g, '\\"')}"]`;
+                        }
+                    }
+                } else {
+                    // TOP-LEVEL MENU: Safe to target the li directly
+                    // Only if it's NOT a parent with submenu children we want to preserve
+                    if (adminMenuLi.id && !/(\d{3,}|[-_]\d+)/.test(adminMenuLi.id)) {
+                        const safeId = window.CSS && window.CSS.escape ? window.CSS.escape(adminMenuLi.id) : adminMenuLi.id;
+                        return '#' + safeId;
+                    }
+                    // Fallback to class combination for top-level
+                    if (adminMenuLi.className && typeof adminMenuLi.className === 'string') {
+                        const classes = adminMenuLi.className.split(/\s+/).filter(c => {
+                            return c.length > 2 && !c.startsWith('zenadmin-') && !/^\d+$/.test(c);
+                        });
+                        if (classes.length > 0) {
+                            const safeClasses = classes.map(c => window.CSS && window.CSS.escape ? window.CSS.escape(c) : c);
+                            return '#adminmenu li.' + safeClasses.join('.');
+                        }
+                    }
+                }
+            }
+
             // 1. ID Strategy (Strict Filter)
             // Reject generated IDs like 'el-1234', 'ui-id-5'
             if (el.id && !/(\d{3,}|[-_]\d+)/.test(el.id)) {
