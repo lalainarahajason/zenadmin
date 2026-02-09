@@ -59,6 +59,19 @@
             this.init();
             this.lastFocusedElement = document.activeElement;
 
+            // Build role checkboxes HTML
+            let rolesHtml = '';
+            if (config.roles && typeof config.roles === 'object') {
+                for (const [roleSlug, roleName] of Object.entries(config.roles)) {
+                    rolesHtml += `
+                        <label class="zenadmin-role-checkbox">
+                            <input type="checkbox" name="zenadmin-hidden-for" value="${roleSlug}" checked>
+                            ${this.escapeHtml(roleName)}
+                        </label>
+                    `;
+                }
+            }
+
             // Render Content
             this.modal.innerHTML = `
                 <h2 id="zenadmin-modal-title">
@@ -79,6 +92,13 @@
                     <div class="zenadmin-field">
                         <label>Target Selector</label>
                         <code>${this.escapeHtml(config.selector)}</code>
+                    </div>
+
+                    <div class="zenadmin-field zenadmin-roles-field">
+                        <label>${config.i18n.hiddenFor || 'Hide for roles:'}</label>
+                        <div class="zenadmin-roles-list">
+                            ${rolesHtml}
+                        </div>
                     </div>
 
                     <div class="zenadmin-field">
@@ -113,10 +133,17 @@
                 const label = document.getElementById('zenadmin-label-input').value;
                 const isSession = document.getElementById('zenadmin-session-only').checked;
 
+                // Collect checked roles
+                const hiddenFor = [];
+                this.modal.querySelectorAll('input[name="zenadmin-hidden-for"]:checked').forEach(cb => {
+                    hiddenFor.push(cb.value);
+                });
+
                 if (config.onConfirm) {
                     config.onConfirm({
                         label: label,
-                        isSession: isSession
+                        isSession: isSession,
+                        hiddenFor: hiddenFor
                     });
                 }
                 this.close();
