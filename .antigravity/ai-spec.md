@@ -1,4 +1,4 @@
-# Specification: ZenAdmin (WP Plugin)
+# Specification: ZenAdmin (WP Plugin) — Enhanced Edition
 
 ## 1. Project Identity & Compliance
 
@@ -8,50 +8,296 @@
 * **License:** GPLv2 or later (WordPress standard)
 * **Text Domain:** `zenadmin`
 * **Minimum PHP Version:** 8.1
+* **Version Schema:** Semantic Versioning (MAJOR.MINOR.PATCH)
+* **Current Version:** 1.0.0
 
 ## 2. Functional Requirements
 
 * **FR1 (Target Mode):** Toggle in WP Admin Bar to activate/deactivate "Selection Mode".
-* **FR2 (Interaction):** - Hover: Purple border (`#6e58ff`).
-* Click: Confirmation modal using native WP UI or clean Vanilla JS.
+* **FR2 (Interaction):** 
+  * **Hover:** Element gets a purple border (`#6e58ff`) and a temporary overlay to prevent interaction with the element itself.
+  * **Click:** Custom WordPress-style modal (not native `confirm()`) with:
+    * Preview of the generated selector
+    * Editable label field (pre-filled with element text or tag name)
+    * Option: "Block permanently" or "Hide for this session only"
+    * "Cancel" and "Confirm" buttons
 
-
-* **FR3 (Identification):** Generate unique CSS selectors. Prioritize `id` over specific classes. Never use generic classes like `.notice`.
-* **FR4 (Persistence):** Store blocked selectors in `wp_options` under `zenadmin_blacklist`.
-* **FR5 (Execution):** Inject `<style>` in `admin_head` with `display: none !important;`.
+* **FR3 (Identification):** Generate stable CSS selectors. (See AS1).
+* **FR4 (Persistence):** 
+  * Store blocked selectors in `wp_options` under `zenadmin_blacklist`.
+  * Store session-only blocks in JavaScript `sessionStorage`.
+* **FR5 (Execution):** Inject `<style>` in `admin_head` with optimized grouped selectors using `display: none !important;` for all stored selectors.
+* **FR6 (Templates):** Provide pre-configured blocking templates for common annoyances (Yoast ads, Elementor upsells, generic plugin nags).
 
 ## 3. Strict Compliance & Security (The "Guardrails")
 
-* **Naming:** No global functions without `zenadmin_` prefix. No generic variables.
-* **Security:**
-* `check_admin_referer()` or `check_ajax_referer()` on all write actions.
-* `current_user_can( 'manage_options' )` on all admin-related logic.
+* **Naming:** No global symbols without `zenadmin_`.
+* **Security Checks:** 
+  * `check_admin_referer()` / `check_ajax_referer()` on every write.
+  * `current_user_can( 'manage_options' )` on every admin action.
 
+* **Data Sanitization:** 
+  * Input: `sanitize_text_field()` or `absint()` for all `$_POST`/`$_GET`.
+  * Output: `esc_html__()`, `esc_attr()`, or `wp_kses_post()` for ALL display.
 
-* **Sanitization/Escaping:**
-* Input: `sanitize_text_field()` or `absint()` for all `$_POST`/`$_GET` data.
-* Output: `esc_html__()`, `esc_attr()`, or `wp_kses_post()` for ALL display logic.
-
-* **Code Style (WPCS):**
-* Enforce **Yoda Conditions** (`if ( true === $var )`).
-* Strict comparisons (`in_array( $n, $h, true )`).
-* Full docblocks for every File, Class, and Function.
-
-
-* **i18n:** All strings must be translatable using the `zenadmin` text domain.
+* **Code Style:** Yoda Conditions, strict comparisons, and full DocBlocks are mandatory.
 
 ## 4. Technical Architecture
 
-* **No External Links:** No "Powered by" or tracking without explicit opt-in.
-* **Performance:** TTFB impact must be near zero. CSS injection is the primary method.
+* **Performance:** 
+  * Minimal PHP footprint. CSS injection is the priority.
+  * Group CSS selectors when injecting (max efficiency).
+  * Don't register `admin_head` hook if blacklist is empty.
 * **File Structure:**
-* `zenadmin.php` (Entry point)
-* `includes/class-core.php` (Hooks, Logic)
-* `includes/class-settings.php` (Admin Management)
-* `assets/zen-engine.js` (Vanilla JS, No jQuery)
+  * `zenadmin.php` (Entry point)
+  * `includes/class-core.php` (Logic, Hooks, Injection)
+  * `includes/class-settings.php` (Admin List Table)
+  * `includes/class-templates.php` (Pre-configured blocking templates)
+  * `assets/zen-engine.js` (Vanilla JS Selector Engine)
+  * `assets/zen-modal.js` (Custom modal interface)
+  * `assets/zen-styles.css` (Minimal modal styling)
+  * `uninstall.php` (Clean-up)
+  * `CHANGELOG.md` (Version history)
 
-### SC1: Strict Data Handling
-- **No Nonce, No Action:** Every single `$_POST`, `$_GET`, or `$_REQUEST` processing MUST start with a nonce verification.
-- **Functions to use:** - For AJAX: `check_ajax_referer( 'zenadmin_ajax_action', 'security' );`
-    - For Form POST: `check_admin_referer( 'zenadmin_save_settings', 'zenadmin_nonce' );`
-- **Error Handling:** If nonce fails, the script must immediately `wp_die()` or return a `403` status.
+## 5. Advanced Logic & Safety (Enhanced)
+
+### AS1: Intelligent Selector Heuristics
+
+* **Stability First:** The engine must crawl the DOM tree upwards to find the most reliable selector.
+* **Priority:** 
+  1. Static `ID` (if it doesn't look auto-generated like `id="notice-123"`).
+  2. Specific Classes (e.g., `.yoast-notice`, `.elementor-ad`).
+  3. Attribute Selectors (e.g., `[data-plugin-id]`).
+  4. Combined selectors for context (e.g., `#wpbody .custom-notice`).
+* **Restriction:** Never use generic WP classes (`.notice`, `.error`, `.updated`) alone. They must be combined with a unique parent or specific sibling class.
+* **Validation:** Before accepting a selector, check its **specificity score**:
+  * If it matches more than 10 elements on the page → Flag as "Too broad" and ask user to refine.
+  * If it contains only tag names (e.g., `div > span`) → Reject and suggest adding classes/IDs.
+
+### AS2: Emergency Access (Safe Mode) — Enhanced
+
+* **Requirement:** If `$_GET['zenadmin_safe_mode'] === '1'`, the plugin MUST NOT inject any blocking CSS.
+* **Hardcoded Whitelist (Extended):** Prohibit blocking of:
+  * `#wpadminbar`
+  * `#wp-admin-bar-my-account`
+  * `#adminmenu`
+  * `#adminmenumain`
+  * `.toplevel_page_zenadmin` (Settings page)
+  * `#wpfooter`
+  * `#wpbody-content > .wrap`
+  * `.wrap > h1` (Page titles)
+  * `#wpbody`
+  * `.zenadmin-modal` (Own modal)
+* **Warning System:** If user attempts to block a whitelisted element, show modal: "⚠️ This element is critical for WordPress Admin. Blocking it may break your dashboard."
+
+### AS3: Data Contract (AJAX)
+
+* **Action:** `zenadmin_save_block`
+* **Payload:** 
+```json
+{
+  "selector": "string",
+  "label": "string",
+  "session_only": "boolean",
+  "security": "nonce"
+}
+```
+* **Response:** 
+```json
+{
+  "success": true/false,
+  "data": {
+    "id": "hash (sha256 of selector + timestamp)",
+    "selector": "sanitized selector",
+    "specificity_warning": "boolean"
+  }
+}
+```
+
+### AS4: Lifecycle & Cleanup
+
+* **Uninstall:** `uninstall.php` must delete the `zenadmin_blacklist` option.
+* **Optimization:** If the blacklist is empty, the `admin_head` hook for CSS injection should not even be registered.
+* **Migration System:** Store a `zenadmin_schema_version` option. If plugin updates change data structure, run migration functions automatically.
+
+### AS5: Conflict Resolution
+
+* **Unique Hashing:** Each blocked element gets a unique ID: `hash('sha256', $selector . time() . wp_get_current_user()->ID)`.
+* **Duplicate Detection:** Before saving, check if selector already exists. If yes, ask: "This element is already blocked. Update label or cancel?"
+* **Cascade Warning:** Detect parent-child relationships. If user blocks `.wrap` and then `.wrap .notice`, warn: "You've already blocked the parent container."
+
+### AS6: Debug Mode
+
+* **Activation:** Set `define('ZENADMIN_DEBUG', true);` in `wp-config.php`.
+* **Logging:** Write to `wp-content/debug.log`:
+  * Timestamp + blocked selector + user ID
+  * Rejected selectors (too generic)
+  * Whitelist violation attempts
+* **Admin Notice:** Show debug info in a dismissible notice: "ZenAdmin Debug: 3 elements blocked, 1 selector rejected (too broad)."
+
+## 6. UI/UX Standards & Accessibility
+
+* **Aesthetics:** 100% Native WP Admin Style. No external fonts or CSS frameworks.
+* **Custom Modal (Accessible Design):**
+  * **Markup:** Must use `role="dialog"`, `aria-modal="true"`, and `aria-labelledby` for screen readers.
+  * **Focus Management (Focus Trap):** * When opened: Save `document.activeElement` and move focus to the first input.
+    * Interaction: Tab and Shift+Tab must be trapped within modal elements.
+    * When closed: Restore focus to the previously saved element.
+  * **Dismissal:** Must close on `Escape` key press or click outside the modal content (overlay).
+* **Dashicons:** * `dashicons-visibility` (Admin Bar toggle)
+  * `dashicons-trash` (Delete action)
+  * `dashicons-warning` (Specificity/Safety warnings)
+* **Feedback:** * Use native `.notice.is-dismissible` for post-action confirmations.
+  * Interactive elements must have `:focus` and `:hover` states consistent with WP Core.
+
+## 7. Blocking Templates (New Feature)
+
+### Template System
+Pre-configured selector sets for common annoyances. Accessible via Settings page "Templates" tab.
+
+**Template 1: Yoast SEO Upsells**
+```php
+[
+  '.yoast-notification',
+  '.yoast_premium_upsell',
+  '[class*="yoast-upgrade"]'
+]
+```
+
+**Template 2: Elementor Promotions**
+```php
+[
+  '.elementor-templates-modal__promotion',
+  '[class*="e-pro-banner"]',
+  '.elementor-control-type-upgrade-promotion'
+]
+```
+
+**Template 3: Generic Plugin Nags**
+```php
+[
+  '.notice.is-dismissible[class*="review"]',
+  '.notice.is-dismissible[class*="upgrade"]'
+]
+```
+
+**Implementation:**
+* Each template has: `name`, `description`, `selectors[]`, `icon`.
+* One-click activation: "Apply Template" button.
+* Templates stored in `includes/templates-config.php` as a PHP array.
+
+## 8. Performance Optimization
+
+### CSS Injection Strategy
+Instead of:
+```css
+.selector1 { display: none !important; }
+.selector2 { display: none !important; }
+```
+
+Output:
+```css
+.selector1, .selector2, .selector3 { display: none !important; }
+```
+
+**Implementation:**
+```php
+$selectors = get_option( 'zenadmin_blacklist', [] );
+if ( ! empty( $selectors ) ) {
+    $combined = implode( ', ', array_column( $selectors, 'selector' ) );
+    echo '<style id="zenadmin-blocks">' . esc_html( $combined ) . ' { display: none !important; }</style>';
+}
+```
+
+## 9. User Documentation
+
+### In-Plugin Help
+* **Settings page sidebar:** "How to use" widget with:
+  * GIF demo of selection mode
+  * Link to full documentation
+  * Troubleshooting tips (use Safe Mode if locked out)
+
+### External Resources
+* `README.md` in plugin root with:
+  * Installation instructions
+  * FAQ (What happens if I break my admin? → Safe Mode)
+  * Screenshots
+  * Contribution guidelines
+
+## 10. Testing Requirements
+
+### Unit Tests (PHPUnit)
+* `test_selector_sanitization()` — Ensure malicious input is cleaned
+* `test_whitelist_protection()` — Verify critical elements can't be blocked
+* `test_empty_blacklist_optimization()` — Confirm no CSS injection when list is empty
+
+### Integration Tests
+* Test AJAX save/delete flow
+* Test Safe Mode activation
+* Test template application
+
+### Browser Tests
+* Verify selector generation across different admin pages
+* Test modal responsiveness
+* Ensure no JavaScript errors in console
+
+## 11. Migration & Versioning
+
+### Schema Versioning
+```php
+// On plugin activation
+add_option( 'zenadmin_schema_version', '1.0.0' );
+
+// On update
+if ( version_compare( get_option( 'zenadmin_schema_version' ), '2.0.0', '<' ) ) {
+    zenadmin_migrate_to_v2();
+}
+```
+
+### Changelog Format (CHANGELOG.md)
+```markdown
+## [1.0.0] - 2024-02-08
+### Added
+- Initial release
+- Selection mode with hover preview
+- Custom modal for blocking
+- Safe Mode emergency access
+- Blocking templates
+```
+
+## 12. Security Hardening (Additional)
+
+* **Rate Limiting:** Max 50 blocks per user to prevent database bloat.
+* **Capability Check on Uninstall:** Only allow uninstall if `current_user_can('manage_options')`.
+* **XSS Prevention:** Never use `innerHTML` in JavaScript. Always use `textContent` or `createTextNode()`.
+* **SQL Injection:** Not applicable (using `wp_options` only), but always use `$wpdb->prepare()` if custom queries are added later.
+
+## 🚀 Implementation Roadmap
+
+### Phase 1 (MVP)
+- [ ] Core blocking functionality (FR1-FR5)
+- [ ] Basic settings page
+- [ ] Safe Mode
+- [ ] Selector heuristics (AS1)
+
+### Phase 2 (Enhanced)
+- [ ] Custom modal interface
+- [ ] Blocking templates
+- [ ] Edit selector functionality
+- [ ] Export/Import
+
+### Phase 3 (Polish)
+- [ ] Debug mode
+- [ ] Unit tests
+- [ ] In-plugin documentation
+- [ ] Performance benchmarking
+
+## 13. Git & Deployment Workflow
+
+* **Atomic Commits:** Every push must represent a single logical change (e.g., "Add FR1 selector logic").
+* **Commit Message Standard:** Use Conventional Commits (e.g., `feat:`, `fix:`, `docs:`, `refactor:`).
+* **Pre-Push Checklist:** Before any push, the AI must:
+  1. Check for `TODO` or `FIXME` left in code.
+  2. Ensure no API keys or secrets are exposed.
+  3. Validate PHP syntax (`php -l`).
+* **Branching:** Never push directly to `main` (optional, depends on your workflow). Use feature branches named `feature/zenadmin-[task]`.
