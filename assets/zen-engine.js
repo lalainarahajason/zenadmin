@@ -42,8 +42,8 @@
                 clearSessionBtn.querySelector('a').addEventListener('click', (e) => {
                     e.preventDefault();
                     sessionStorage.removeItem('zenadmin_session_blocks');
-                    alert('Session blocks cleared. Reloading...');
-                    window.location.reload();
+                    ZenAdminToast.success('Session blocks cleared. Reloading...');
+                    setTimeout(() => window.location.reload(), 1500);
                 });
             }
 
@@ -156,7 +156,7 @@
 
                 // Whitelist Check
                 if (this.isWhitelisted(selector, this.currentTarget)) {
-                    alert('Safety Warning: This element is critical and cannot be blocked.');
+                    ZenAdminToast.warning('Safety Warning: This element is critical and cannot be blocked.');
                     return;
                 }
 
@@ -175,7 +175,7 @@
                 });
             } catch (err) {
                 console.error('ZenAdmin Selection Error:', err);
-                alert('Error generating selector. Check console.');
+                ZenAdminToast.error('Error generating selector. Check console.');
             }
         },
 
@@ -369,8 +369,9 @@
                 if (response.success) {
                     this.hideElement(selector);
                     this.toggleMode(false);
+                    ZenAdminToast.success('Element blocked successfully!');
                 } else {
-                    alert('Error: ' + response.data.message);
+                    ZenAdminToast.error('Error: ' + response.data.message);
                 }
             });
         },

@@ -168,13 +168,6 @@ body.zenadmin-mode-active {
     cursor: crosshair !important;
 }
 
-body.zenadmin-mode-active * {
-    /* Prevent clicks on links logic handled in JS, 
-       but we want hover effects.
-       Actually, pointer-events: none on * might break detection.
-       JS will handle interception. */
-}
-
 /* Settings Page */
 .zenadmin-card {
     position: relative;
@@ -309,4 +302,110 @@ body.zenadmin-mode-active * {
 
 .zenadmin-edit-roles-link:hover {
     color: #135e96;
+}
+
+/* ==========================================================================
+   Toast Notification System
+   ========================================================================== */
+
+.zenadmin-toast-container {
+    position: fixed;
+    top: 50px;
+    right: 20px;
+    z-index: 100002;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.zenadmin-toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border-left: 4px solid #2271b1;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+    pointer-events: auto;
+    max-width: 400px;
+}
+
+.zenadmin-toast-visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.zenadmin-toast-hiding {
+    opacity: 0;
+    transform: translateX(100%);
+}
+
+.zenadmin-toast .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.zenadmin-toast-message {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #1d2327;
+}
+
+.zenadmin-toast-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    color: #787c82;
+    transition: color 0.2s;
+}
+
+.zenadmin-toast-close:hover {
+    color: #1d2327;
+}
+
+.zenadmin-toast-close .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+/* Toast Types */
+.zenadmin-toast-success {
+    border-left-color: #00a32a;
+}
+
+.zenadmin-toast-success .dashicons {
+    color: #00a32a;
+}
+
+.zenadmin-toast-error {
+    border-left-color: #d63638;
+}
+
+.zenadmin-toast-error .dashicons {
+    color: #d63638;
+}
+
+.zenadmin-toast-warning {
+    border-left-color: #dba617;
+}
+
+.zenadmin-toast-warning .dashicons {
+    color: #dba617;
+}
+
+.zenadmin-toast-info {
+    border-left-color: #2271b1;
+}
+
+.zenadmin-toast-info .dashicons {
+    color: #2271b1;
 }

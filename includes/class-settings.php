@@ -248,8 +248,9 @@ class Settings {
 								$('tr[data-id="' + currentBlockId + '"] .zenadmin-edit-roles-link').html(linkText + ' <span class="dashicons dashicons-edit" style="font-size:14px;vertical-align:middle;"></span>');
 								$('#zenadmin-roles-popup').fadeOut(200);
 								currentBlockId = null;
+								ZenAdminToast.success('<?php esc_html_e( 'Roles updated successfully!', 'zenadmin' ); ?>');
 							} else {
-								alert(response.data.message);
+								ZenAdminToast.error(response.data.message);
 							}
 						});
 					});
@@ -269,8 +270,9 @@ class Settings {
 						}, function(response) {
 							if (response.success) {
 								btn.closest('tr').fadeOut();
+								ZenAdminToast.success('<?php esc_html_e( 'Block deleted successfully!', 'zenadmin' ); ?>');
 							} else {
-								alert(response.data.message);
+								ZenAdminToast.error(response.data.message);
 							}
 						});
 					});
@@ -346,7 +348,7 @@ class Settings {
 			<h3><?php esc_html_e( 'Troubleshooting', 'zenadmin' ); ?></h3>
 			<p><?php esc_html_e( 'If elements remain hidden even after deleting them from the list, try clearing your browser session blocks:', 'zenadmin' ); ?></p>
 			<p>
-				<button type="button" class="button button-secondary" onclick="sessionStorage.removeItem('zenadmin_session_blocks'); alert('<?php esc_attr_e( 'Session blocks cleared. Reloading...', 'zenadmin' ); ?>'); window.location.reload();">
+				<button type="button" class="button button-secondary" onclick="sessionStorage.removeItem('zenadmin_session_blocks'); ZenAdminToast.success('<?php esc_attr_e( 'Session blocks cleared. Reloading...', 'zenadmin' ); ?>'); setTimeout(function() { window.location.reload(); }, 1500);">
 					<?php esc_html_e( 'Clear Browser Session Blocks', 'zenadmin' ); ?>
 				</button>
 			</p>
