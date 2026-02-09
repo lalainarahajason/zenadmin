@@ -36,6 +36,30 @@
                 });
             }
 
+            // Admin Bar: Clear Session
+            const clearSessionBtn = document.getElementById('wp-admin-bar-zenadmin-clear-session');
+            if (clearSessionBtn) {
+                clearSessionBtn.querySelector('a').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    sessionStorage.removeItem('zenadmin_session_blocks');
+                    alert('Session blocks cleared. Reloading...');
+                    window.location.reload();
+                });
+            }
+
+            // Admin Bar: Reset All
+            const resetAllBtn = document.getElementById('wp-admin-bar-zenadmin-reset-all');
+            if (resetAllBtn) {
+                resetAllBtn.querySelector('a').addEventListener('click', (e) => {
+                    if (!confirm('Warning: This will delete ALL blocked elements database and session.\n\nAre you sure completely reset ZenAdmin?')) {
+                        e.preventDefault();
+                    } else {
+                        sessionStorage.removeItem('zenadmin_session_blocks');
+                        // Let link navigation proceed
+                    }
+                });
+            }
+
             // Document Hover
             document.addEventListener('mouseover', (e) => {
                 if (!this.isActive) return;
