@@ -112,8 +112,10 @@ class Core {
 			return;
 		}
 
-		// Group selectors
-		$css = implode( ', ', $selectors ) . ' { display: none !important; }';
+		// Group selectors - aggressive CSS to prevent gaps
+		$hide_css = 'display: none !important; visibility: hidden !important; height: 0 !important; min-height: 0 !important; max-height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important;';
+		
+		$css = implode( ', ', $selectors ) . ' { ' . $hide_css . ' }';
 
 		echo '<style id="zenadmin-blocks">' . $css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
