@@ -114,6 +114,23 @@
                 </div>
             `;
 
+            // Insert "Restrict Access" field if URL is present (before Session checkbox)
+            if (config.targetUrl) {
+                const sessionField = this.modal.querySelector('#zenadmin-session-only').closest('.zenadmin-field');
+                const hardBlockHtml = `
+                    <div class="zenadmin-field" style="margin-bottom: 10px; border-left: 3px solid #d63638; padding-left: 10px;">
+                         <label style="color: #d63638; font-weight: 500;">
+                            <input type="checkbox" id="zenadmin-hard-block" value="1"> 
+                            Restrict Access (Hard Block)
+                        </label>
+                        <p class="description" style="margin: 0; font-size: 11px; color: #666;">
+                            Also blocks access to: <code>${this.escapeHtml(config.targetUrl)}</code>
+                        </p>
+                    </div>
+                `;
+                sessionField.insertAdjacentHTML('beforebegin', hardBlockHtml);
+            }
+
             // Show Specificity Warning if needed
             if (config.showWarning) {
                 document.getElementById('zenadmin-specificity-warning').style.display = 'block';
@@ -133,6 +150,10 @@
                 const label = document.getElementById('zenadmin-label-input').value;
                 const isSession = document.getElementById('zenadmin-session-only').checked;
 
+                // Get Hard Block status (if exists)
+                const hardBlockCheckbox = document.getElementById('zenadmin-hard-block');
+                const isHardBlock = hardBlockCheckbox ? hardBlockCheckbox.checked : false;
+
                 // Collect checked roles
                 const hiddenFor = [];
                 this.modal.querySelectorAll('input[name="zenadmin-hidden-for"]:checked').forEach(cb => {
@@ -143,7 +164,9 @@
                     config.onConfirm({
                         label: label,
                         isSession: isSession,
-                        hiddenFor: hiddenFor
+                        hiddenFor: hiddenFor,
+                        targetUrl: config.targetUrl, // Pass URL back
+                        isHardBlock: isHardBlock     // Pass Hard Block status
                     });
                 }
                 this.close();

@@ -149,7 +149,14 @@ class Settings {
 							$total_roles = count( $all_roles );
 						?>
 							<tr data-id="<?php echo esc_attr( $hash ); ?>" data-roles="<?php echo esc_attr( wp_json_encode( $hidden_for ) ); ?>">
-								<td><?php echo esc_html( $item['label'] ); ?></td>
+								<td>
+									<?php echo esc_html( $item['label'] ); ?>
+									<?php if ( ! empty( $item['hard_block'] ) ) : ?>
+										<br>
+										<span class="dashicons dashicons-shield" style="color:#d63638; font-size:16px; width:16px; height:16px; margin-right:2px; vertical-align:text-bottom;" title="<?php esc_attr_e( 'Hard Block Enabled', 'zenadmin' ); ?>"></span>
+										<small style="color:#d63638;"><?php esc_html_e( 'Access Restricted', 'zenadmin' ); ?></small>
+									<?php endif; ?>
+								</td>
 								<td><code style="font-size:11px;word-break:break-all;"><?php echo esc_html( $item['selector'] ); ?></code></td>
 								<td>
 									<a href="#" class="zenadmin-edit-roles-link" data-id="<?php echo esc_attr( $hash ); ?>">

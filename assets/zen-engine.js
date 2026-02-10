@@ -160,10 +160,29 @@
                     return;
                 }
 
+                // Detect if it is a menu link that can be "Hard Blocked"
+                let targetUrl = null;
+
+                // 1. Try finding link upwards (clicked on link text/icon)
+                let menuLink = this.currentTarget.closest('a');
+
+                // 2. Try finding link downwards (clicked on LI padding)
+                if (!menuLink) {
+                    menuLink = this.currentTarget.querySelector('a');
+                }
+
+                if (menuLink && menuLink.closest('#adminmenu')) {
+                    const href = menuLink.getAttribute('href');
+                    if (href && href !== '#' && !href.startsWith('javascript:')) {
+                        targetUrl = href;
+                    }
+                }
+
                 ZenAdminModal.open({
                     title: this.config.i18n.confirmTitle,
                     selector: selector,
                     label: this.getClassLabel(this.currentTarget),
+                    targetUrl: targetUrl, // Pass the URL for optional Hard Blocking
                     showWarning: showWarning,
                     warning: warningMsg,
                     i18n: this.config.i18n,
@@ -364,7 +383,9 @@
                 security: this.config.nonce,
                 selector: selector,
                 label: data.label,
-                hidden_for: JSON.stringify(data.hiddenFor || [])
+                hidden_for: JSON.stringify(data.hiddenFor || []),
+                target_url: data.targetUrl || '',     // Send URL
+                hard_block: data.isHardBlock ? 1 : 0  // Send Hard Block flag
             }, (response) => {
                 if (response.success) {
                     this.hideElement(selector);
@@ -373,6 +394,9 @@
                 } else {
                     ZenAdminToast.error('Error: ' + response.data.message);
                 }
+            }).fail((err) => {
+                ZenAdminToast.error('Request failed. Check console.');
+                console.error(err);
             });
         },
 
