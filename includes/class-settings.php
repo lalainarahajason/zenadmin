@@ -96,6 +96,7 @@ class Settings {
 			<nav class="nav-tab-wrapper">
 				<a href="?page=zenadmin&tab=blocks" class="nav-tab <?php echo 'blocks' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Blocked Elements', 'zenadmin' ); ?></a>
 				<a href="?page=zenadmin&tab=templates" class="nav-tab <?php echo 'templates' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Templates', 'zenadmin' ); ?></a>
+				<a href="?page=zenadmin&tab=tools" class="nav-tab <?php echo 'tools' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Tools', 'zenadmin' ); ?></a>
 				<a href="?page=zenadmin&tab=help" class="nav-tab <?php echo 'help' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Help & Safe Mode', 'zenadmin' ); ?></a>
 			</nav>
 
@@ -107,6 +108,8 @@ class Settings {
 					$this->render_blocks_tab();
 				} elseif ( 'templates' === $active_tab ) {
 					$this->render_templates_tab();
+				} elseif ( 'tools' === $active_tab ) {
+					$this->render_tools_tab();
 				} else {
 					$this->render_help_tab();
 				}
@@ -362,6 +365,67 @@ class Settings {
 				<input type="hidden" name="action" value="zenadmin_reset_all">
 				<button type="submit" class="button button-link-delete"><?php esc_html_e( 'Reset All Settings', 'zenadmin' ); ?></button>
 			</form>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render Tools Tab.
+	 */
+	private function render_tools_tab() {
+		?>
+		<div class="zenadmin-card">
+			<h2><?php esc_html_e( 'Import / Export', 'zenadmin' ); ?></h2>
+			<p><?php esc_html_e( 'Transfer your ZenAdmin configuration between sites.', 'zenadmin' ); ?></p>
+			
+			<div class="zenadmin-tools-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px;">
+				
+				<!-- Export Section -->
+				<div class="zenadmin-tool-box" style="border: 1px solid #ccd0d4; padding: 20px; background: #fff;">
+					<h3>
+						<span class="dashicons dashicons-download"></span> 
+						<?php esc_html_e( 'Export Configuration', 'zenadmin' ); ?>
+					</h3>
+					<p><?php esc_html_e( 'Download a JSON file containing all your blocked elements, labels, and visibility settings.', 'zenadmin' ); ?></p>
+					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+						<?php wp_nonce_field( 'zenadmin_export_nonce', 'zenadmin_nonce' ); ?>
+						<input type="hidden" name="action" value="zenadmin_export">
+						<button type="submit" class="button button-primary">
+							<?php esc_html_e( 'Download Export File', 'zenadmin' ); ?>
+						</button>
+					</form>
+				</div>
+
+				<!-- Import Section -->
+				<div class="zenadmin-tool-box" style="border: 1px solid #ccd0d4; padding: 20px; background: #fff;">
+					<h3>
+						<span class="dashicons dashicons-upload"></span> 
+						<?php esc_html_e( 'Import Configuration', 'zenadmin' ); ?>
+					</h3>
+					<p><?php esc_html_e( 'Upload a previously exported ZenAdmin JSON file.', 'zenadmin' ); ?></p>
+					
+					<form method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+						<?php wp_nonce_field( 'zenadmin_import_nonce', 'zenadmin_nonce' ); ?>
+						<input type="hidden" name="action" value="zenadmin_import">
+						
+						<p>
+							<input type="file" name="zenadmin_import_file" accept=".json" required>
+						</p>
+						
+						<p>
+							<label>
+								<input type="checkbox" name="zenadmin_overwrite" value="1"> 
+								<?php esc_html_e( 'Overwrite existing blocks (Dangerous)', 'zenadmin' ); ?>
+							</label>
+						</p>
+
+						<button type="submit" class="button button-primary">
+							<?php esc_html_e( 'Start Import', 'zenadmin' ); ?>
+						</button>
+					</form>
+				</div>
+
+			</div>
 		</div>
 		<?php
 	}

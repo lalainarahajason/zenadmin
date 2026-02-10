@@ -25,6 +25,11 @@ class Core {
 			return;
 		}
 
+		// Portability Engine (Import/Export)
+		require_once plugin_dir_path( __FILE__ ) . 'class-portability.php';
+		$portability = new \ZenAdmin_Portability();
+		$portability->init();
+
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_head', array( $this, 'inject_styles' ), 999 );
 		add_action( 'admin_bar_menu', array( $this, 'admin_bar_menu' ), 100 );
