@@ -40,18 +40,7 @@ Le module doit injecter du CSS et des scripts sur la page `wp-login.php` via le 
 
 
 
-## 5. Hard Blocking Logic (Restriction d'Accès)
-
-C'est la différence majeure entre le masquage CSS et la sécurité.
-
-* **Menu Removal (PHP) :** Utiliser `remove_menu_page()` et `remove_submenu_page()` au lieu de simplement cacher en CSS.
-* **Access Lockdown :**
-* Si une page est "Hard Blocked", l'accès direct via l'URL (`wp-admin/options-general.php`) doit être intercepté via le hook `admin_init`.
-* **Action :** Rediriger l'utilisateur vers `admin.url( 'index.php' )` avec une notice d'erreur si ses droits ou son rôle ne lui permettent pas d'accéder à la page masquée.
-
-
-
-## 6. Dashboard Customization
+## 5. Dashboard Customization
 
 * **Widget Remover :** Option pour désactiver tous les widgets par défaut (Brouillon rapide, Nouvelles, Activité) via `wp_dashboard_setup`.
 * **Agency Welcome Widget :**
@@ -88,7 +77,3 @@ C'est la différence majeure entre le masquage CSS et la sécurité.
 }
 
 ```
-
----
-
-**Souhaites-tu que je transforme cette spec en une liste de tâches (To-Do List) prioritaires pour ton IA de développement ?**

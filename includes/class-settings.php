@@ -24,6 +24,41 @@ class Settings {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_post_zenadmin_apply_template', array( $this, 'handle_template_application' ) );
 		add_action( 'admin_post_zenadmin_reset_all', array( $this, 'handle_reset_all' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+	}
+
+	/**
+	 * Enqueue scripts for settings page.
+	 */
+	public function enqueue_scripts( $hook ) {
+		if ( 'settings_page_zenadmin' !== $hook ) {
+			return;
+		}
+
+		wp_enqueue_media();
+
+		// Inline JS for Media Uploader
+		$script = "
+		jQuery(document).ready(function($){
+			$('.zenadmin-upload-btn').click(function(e) {
+				e.preventDefault();
+				var button = $(this);
+				var inputId = button.data('input');
+				
+				var custom_uploader = wp.media({
+					title: '" . esc_js( __( 'Select Logo', 'zenadmin' ) ) . "',
+					button: {
+						text: '" . esc_js( __( 'Use this logo', 'zenadmin' ) ) . "'
+					},
+					multiple: false
+				}).on('select', function() {
+					var attachment = custom_uploader.state().get('selection').first().toJSON();
+					$('#' + inputId).val(attachment.url);
+				}).open();
+			});
+		});
+		";
+		wp_add_inline_script( 'common', $script );
 	}
 
 	/**
@@ -44,6 +79,7 @@ class Settings {
 	 */
 	public function register_settings() {
 		register_setting( 'zenadmin_options', 'zenadmin_blacklist' );
+		register_setting( 'zenadmin_options', 'zenadmin_white_label' );
 	}
 
 	/**
@@ -97,6 +133,7 @@ class Settings {
 				<a href="?page=zenadmin&tab=blocks" class="nav-tab <?php echo 'blocks' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Blocked Elements', 'zenadmin' ); ?></a>
 				<a href="?page=zenadmin&tab=templates" class="nav-tab <?php echo 'templates' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Templates', 'zenadmin' ); ?></a>
 				<a href="?page=zenadmin&tab=tools" class="nav-tab <?php echo 'tools' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Tools', 'zenadmin' ); ?></a>
+				<a href="?page=zenadmin&tab=white-label" class="nav-tab <?php echo 'white-label' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'White Label', 'zenadmin' ); ?></a>
 				<a href="?page=zenadmin&tab=help" class="nav-tab <?php echo 'help' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Help & Safe Mode', 'zenadmin' ); ?></a>
 			</nav>
 
@@ -110,6 +147,8 @@ class Settings {
 					$this->render_templates_tab();
 				} elseif ( 'tools' === $active_tab ) {
 					$this->render_tools_tab();
+				} elseif ( 'white-label' === $active_tab ) {
+					$this->render_white_label_tab();
 				} else {
 					$this->render_help_tab();
 				}
@@ -433,6 +472,96 @@ class Settings {
 				</div>
 
 			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render White Label Tab.
+	 */
+	private function render_white_label_tab() {
+		$options = get_option( 'zenadmin_white_label', array() );
+		?>
+		<div class="zenadmin-card">
+			<h2><?php esc_html_e( 'White Label Settings', 'zenadmin' ); ?></h2>
+			<p><?php esc_html_e( 'Customize the WordPress interface for your clients.', 'zenadmin' ); ?></p>
+			
+			<form method="post" action="options.php">
+				<?php settings_fields( 'zenadmin_options' ); ?>
+				<table class="form-table">
+					<!-- Enable -->
+					<tr valign="top">
+						<th scope="row"><?php esc_html_e( 'Enable White Label', 'zenadmin' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="zenadmin_white_label[enabled]" value="1" <?php checked( isset( $options['enabled'] ) && $options['enabled'] ); ?>>
+								<?php esc_html_e( 'Activate White Label features', 'zenadmin' ); ?>
+							</label>
+						</td>
+					</tr>
+
+					<!-- Agency Identity -->
+					<tr valign="top">
+						<th scope="row"><?php esc_html_e( 'Agency Name', 'zenadmin' ); ?></th>
+						<td>
+							<input type="text" name="zenadmin_white_label[agency_name]" value="<?php echo isset( $options['agency_name'] ) ? esc_attr( $options['agency_name'] ) : ''; ?>" class="regular-text">
+							<p class="description"><?php esc_html_e( 'Replaces "WordPress" in various places (e.g. Login page title).', 'zenadmin' ); ?></p>
+						</td>
+					</tr>
+					<tr valign="top">
+						<th scope="row"><?php esc_html_e( 'Agency URL', 'zenadmin' ); ?></th>
+						<td>
+							<input type="url" name="zenadmin_white_label[agency_url]" value="<?php echo isset( $options['agency_url'] ) ? esc_attr( $options['agency_url'] ) : ''; ?>" class="regular-text">
+							<p class="description"><?php esc_html_e( 'Where the login logo should link to.', 'zenadmin' ); ?></p>
+						</td>
+					</tr>
+
+					<!-- Stealth Mode -->
+					<tr valign="top">
+						<th scope="row"><?php esc_html_e( 'Stealth Mode', 'zenadmin' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="zenadmin_white_label[stealth_mode]" value="1" <?php checked( isset( $options['stealth_mode'] ) && $options['stealth_mode'] ); ?>>
+								<?php esc_html_e( 'Hide ZenAdmin from the plugins list (plugins.php).', 'zenadmin' ); ?>
+							</label>
+							<p class="description" style="color:#d63638;"><?php esc_html_e( 'Warning: You will need to know the direct URL to access settings if you hide the plugin.', 'zenadmin' ); ?></p>
+						</td>
+					</tr>
+
+					<!-- Footer -->
+					<tr valign="top">
+						<th scope="row"><?php esc_html_e( 'Admin Footer Text', 'zenadmin' ); ?></th>
+						<td>
+							<textarea name="zenadmin_white_label[footer_text]" class="large-text" rows="2"><?php echo isset( $options['footer_text'] ) ? esc_textarea( $options['footer_text'] ) : ''; ?></textarea>
+							<p class="description"><?php esc_html_e( 'Replaces "Thank you for creating with WordPress". Supports HTML.', 'zenadmin' ); ?></p>
+						</td>
+					</tr>
+
+					<tr valign="top">
+						<th scope="row"><?php esc_html_e( 'Hide WP Version', 'zenadmin' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="zenadmin_white_label[hide_version]" value="1" <?php checked( isset( $options['hide_version'] ) && $options['hide_version'] ); ?>>
+								<?php esc_html_e( 'Remove WordPress version number from admin footer', 'zenadmin' ); ?>
+							</label>
+						</td>
+					</tr>
+				</table>
+
+				<h3><?php esc_html_e( 'Login Customization', 'zenadmin' ); ?></h3>
+				<table class="form-table">
+					<tr valign="top">
+						<th scope="row"><?php esc_html_e( 'Custom Logo URL', 'zenadmin' ); ?></th>
+						<td>
+							<input type="text" name="zenadmin_white_label[login_logo]" id="zenadmin_login_logo" value="<?php echo isset( $options['login_logo'] ) ? esc_attr( $options['login_logo'] ) : ''; ?>" class="regular-text">
+							<button type="button" class="button zenadmin-upload-btn" data-input="zenadmin_login_logo"><?php esc_html_e( 'Upload', 'zenadmin' ); ?></button>
+							<p class="description"><?php esc_html_e( 'Full URL to your agency logo image.', 'zenadmin' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
+				<?php submit_button(); ?>
+			</form>
 		</div>
 		<?php
 	}

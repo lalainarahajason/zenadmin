@@ -35,7 +35,8 @@ spl_autoload_register(
 		}
 
 		$relative_class = substr( $class, $len );
-		$file           = $base_dir . 'class-' . strtolower( str_replace( '\\', '-', $relative_class ) ) . '.php';
+		// Replace namespace separators with hyphens, and underscores with hyphens
+		$file = $base_dir . 'class-' . strtolower( str_replace( array( '\\', '_' ), '-', $relative_class ) ) . '.php';
 
 		if ( file_exists( $file ) ) {
 			require $file;
@@ -110,6 +111,12 @@ final class ZenAdmin {
 		// Initialize Settings
 		if ( is_admin() && class_exists( 'ZenAdmin\\Settings' ) ) {
 			new \ZenAdmin\Settings();
+		}
+
+		// Initialize White Label (Pro)
+		if ( class_exists( 'ZenAdmin\\White_Label' ) ) {
+			$white_label = new \ZenAdmin\White_Label();
+			$white_label->init();
 		}
 	}
 
