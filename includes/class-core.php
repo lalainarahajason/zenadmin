@@ -25,6 +25,12 @@ class Core {
 			return;
 		}
 
+		// Portability Engine (Import/Export)
+		require_once plugin_dir_path( __FILE__ ) . 'class-portability.php';
+		$portability = new \ZenAdmin_Portability();
+		$portability->init();
+
+		add_action( 'admin_init', array( $this, 'enforce_hard_blocks' ) ); // Hard Blocking Enforcement
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_head', array( $this, 'inject_styles' ), 999 );
 		add_action( 'admin_bar_menu', array( $this, 'admin_bar_menu' ), 100 );
@@ -231,6 +237,10 @@ class Core {
 		// Sanitize role slugs
 		$hidden_for = array_map( 'sanitize_key', $hidden_for );
 
+		// Hard Block Fields
+		$target_url = isset( $_POST['target_url'] ) ? sanitize_text_field( wp_unslash( $_POST['target_url'] ) ) : '';
+		$hard_block = isset( $_POST['hard_block'] ) && '1' === $_POST['hard_block'];
+
 		if ( empty( $selector ) ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid selector', 'zenadmin' ) ) );
 		}
@@ -243,8 +253,9 @@ class Core {
 			wp_send_json_error( array( 'message' => __( 'Limit reached (200). Please delete some blocks.', 'zenadmin' ) ) );
 		}
 
-		$hash      = hash( 'sha256', $selector . 'zenadmin' ); // Simple hash for ID
-
+		// Store with Hash for uniqueness
+		$hash = md5( $selector );
+		
 		if ( isset( $blacklist[ $hash ] ) ) {
 			wp_send_json_error( array( 'message' => __( 'Selector already blocked', 'zenadmin' ) ) );
 		}
@@ -253,6 +264,8 @@ class Core {
 			'selector'   => $selector,
 			'label'      => $label ?: $selector,
 			'hidden_for' => $hidden_for,
+			'target_url' => $target_url,   // URL to hard block
+			'hard_block' => $hard_block,   // Boolean flag
 			'created_at' => current_time( 'mysql' ),
 			'user_id'    => get_current_user_id(),
 		);
@@ -353,5 +366,69 @@ class Core {
 			'#wpbody',
 			'.zenadmin-modal',
 		);
+	}
+
+	/**
+	 * Enforce Hard Blocking on restricted URLs.
+	 */
+	public function enforce_hard_blocks() {
+		// 1. Safety & Exclusions
+		if ( wp_doing_ajax() || defined( 'DOING_AUTOSAVE' ) || $this->is_safe_mode() ) {
+			return;
+		}
+
+		if ( ! is_admin() ) {
+			return;
+		}
+
+		$current_uri = $_SERVER['REQUEST_URI'];
+		
+		// Anti-Lockout Whitelist (Hardcoded)
+		// Prevent blocking ZenAdmin settings or Dashboard index
+		if ( strpos( $current_uri, 'page=zenadmin' ) !== false || 
+			 preg_match( '/wp-admin\/index\.php$/', $current_uri ) ||
+			 preg_match( '/wp-admin\/$/', $current_uri ) ) {
+			return;
+		}
+
+		// 2. Get Rules
+		$blacklist = get_option( 'zenadmin_blacklist', array() );
+		if ( empty( $blacklist ) ) {
+			return;
+		}
+
+		$user = wp_get_current_user();
+		$user_roles = (array) $user->roles;
+
+		// 3. Check for Hard Blocks
+		foreach ( $blacklist as $entry ) {
+			// Must be marked as Hard Block
+			if ( empty( $entry['hard_block'] ) || empty( $entry['target_url'] ) ) {
+				continue;
+			}
+
+			// Check Role Visibility (if defined)
+			// Example: If blocked for 'editor', and user is 'editor', then Block.
+			// Logic matches frontend: if user_roles intersects with hidden_for, it is hidden.
+			if ( isset( $entry['hidden_for'] ) && is_array( $entry['hidden_for'] ) && ! empty( $entry['hidden_for'] ) ) {
+				if ( ! array_intersect( $user_roles, $entry['hidden_for'] ) ) {
+					// User does NOT have a blocked role -> Skip
+					continue;
+				}
+			}
+
+			// Match URL
+			// Decode HTML entities just in case
+			$blocked_url = html_entity_decode( $entry['target_url'] );
+
+			// Basic loose matching: if current URI contains the blocked relative path
+			// This covers: /wp-admin/options-general.php matches options-general.php
+			if ( strpos( $current_uri, $blocked_url ) !== false ) {
+				
+				// Block Access
+				wp_safe_redirect( admin_url( 'index.php?zenadmin_blocked=1' ) );
+				exit;
+			}
+		}
 	}
 }

@@ -31,6 +31,7 @@ class Templates {
 					'.yoast_premium_upsell',
 					'[class*="yoast-upgrade"]',
 					'#wpseo-dashboard-overview .yoast-container',
+					'#webinar-promo-notification',
 				),
 			),
 			'elementor' => array(
