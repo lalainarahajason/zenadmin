@@ -324,7 +324,7 @@ if ( version_compare( get_option( 'zenadmin_schema_version' ), '2.0.0', '<' ) ) 
 ## 13. Git & Deployment Workflow
 
 * **Atomic Commits:** Every push must represent a single logical change (e.g., "Add FR1 selector logic").
-* **Commit Message Standard:** Use Conventional Commits (e.g., `feat:`, `fix:`, `docs:`, `refactor:`).
+* **Commit Message Standard:** Use Conventional Commits (e.g., `feat:`, `fix:`, `docs:`, `refactor:`).d
 * **Pre-Push Checklist:** Before any push, the AI must:
   1. Check for `TODO` or `FIXME` left in code.
   2. Ensure no API keys or secrets are exposed.
