@@ -248,6 +248,11 @@ class Core {
 		// Conflict Check
 		$blacklist = get_option( 'zenadmin_blacklist', array() );
 		
+		// Ensure $blacklist is always an array (fix for PHP 8+ count() TypeError)
+		if ( ! is_array( $blacklist ) ) {
+			$blacklist = array();
+		}
+		
 		// Limit Check (Hardening Section 4: Limit increased to 200)
 		if ( count( $blacklist ) >= 200 ) {
 			wp_send_json_error( array( 'message' => __( 'Limit reached (200). Please delete some blocks.', 'zenadmin' ) ) );

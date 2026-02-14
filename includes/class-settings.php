@@ -163,6 +163,12 @@ class Settings {
 	 */
 	private function render_blocks_tab() {
 		$blacklist = get_option( 'zenadmin_blacklist', array() );
+		
+		// Ensure $blacklist is always an array
+		if ( ! is_array( $blacklist ) ) {
+			$blacklist = array();
+		}
+		
 		global $wp_roles;
 		$all_roles = wp_list_pluck( $wp_roles->roles, 'name' );
 		?>
@@ -183,6 +189,11 @@ class Settings {
 					</thead>
 					<tbody>
 						<?php foreach ( $blacklist as $hash => $item ) : 
+							// Skip invalid items
+							if ( ! is_array( $item ) || ! isset( $item['selector'] ) || ! isset( $item['label'] ) ) {
+								continue;
+							}
+							
 							$hidden_for = isset( $item['hidden_for'] ) ? (array) $item['hidden_for'] : array_keys( $all_roles );
 							$role_count = count( $hidden_for );
 							$total_roles = count( $all_roles );
@@ -213,7 +224,7 @@ class Settings {
 								<td>
 									<button class="button button-small button-link-delete zenadmin-delete-btn" data-id="<?php echo esc_attr( $hash ); ?>"><?php esc_html_e( 'Delete', 'zenadmin' ); ?></button>
 								</td>
-								<td><?php echo esc_html( date_i18n( 'Y-m-d H:i:s', strtotime( $item['created_at'] ) ) ); ?></td>
+								<td><?php echo esc_html( isset( $item['created_at'] ) ? wp_date( 'Y-m-d H:i:s', strtotime( $item['created_at'] ) ) : '-' ); ?></td>
 							</tr>
 						<?php endforeach; ?>
 					</tbody>
