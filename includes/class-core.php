@@ -71,11 +71,13 @@ class Core {
 				'blocked'   => get_option( 'zenadmin_blacklist', array() ),
 				'roles'     => $roles_list,
 				'i18n'      => array(
-					'confirmTitle' => __( 'Block Element', 'zenadmin' ),
-					'confirmBtn'   => __( 'Block Forever', 'zenadmin' ),
-					'cancelBtn'    => __( 'Cancel', 'zenadmin' ),
-					'labelLabel'   => __( 'Label (for your reference)', 'zenadmin' ),
-					'sessionOnly'  => __( 'Hide for this session only', 'zenadmin' ),
+					'confirmTitle' => __( 'Hide Element', 'zenadmin' ),
+					'confirm'      => __( 'Hide Element', 'zenadmin' ),
+					'cancel'       => __( 'Cancel', 'zenadmin' ),
+					'preview'      => __( 'Preview', 'zenadmin' ),
+					'restore'      => __( 'Restore', 'zenadmin' ),
+					'label'        => __( 'Label (for your reference)', 'zenadmin' ),
+					'sessionOnly'  => __( 'Hide temporarily (Reload to reset)', 'zenadmin' ),
 					'hiddenFor'    => __( 'Hide for roles:', 'zenadmin' ),
 				),
 			)

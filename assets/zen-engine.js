@@ -183,6 +183,7 @@
                     selector: selector,
                     label: this.getClassLabel(this.currentTarget),
                     targetUrl: targetUrl, // Pass the URL for optional Hard Blocking
+                    element: this.currentTarget, // Pass element for Preview mode
                     showWarning: showWarning,
                     warning: warningMsg,
                     i18n: this.config.i18n,
@@ -222,7 +223,7 @@
                 } else {
                     // TOP-LEVEL MENU: Check if it has submenus
                     const hasSubmenu = adminMenuLi.classList.contains('wp-has-submenu');
-                    
+
                     if (hasSubmenu) {
                         // CRITICAL FIX: For parent menus with submenus, target the anchor ONLY
                         // This prevents hiding all submenus when blocking the parent
@@ -235,7 +236,7 @@
                             }
                         }
                     }
-                    
+
                     // For menus WITHOUT submenus, safe to target the li directly
                     if (adminMenuLi.id && !/(\d{3,}|[-_]\d+)/.test(adminMenuLi.id)) {
                         const safeId = window.CSS && window.CSS.escape ? window.CSS.escape(adminMenuLi.id) : adminMenuLi.id;
