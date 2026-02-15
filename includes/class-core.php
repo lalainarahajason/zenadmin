@@ -221,6 +221,11 @@ class Core {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'zenadmin' ) ) );
 		}
+		
+		// Check if settings are locked
+		if ( $this->is_settings_locked() ) {
+			wp_send_json_error( array( 'message' => __( 'Settings are locked. Modifications are disabled.', 'zenadmin' ) ) );
+		}
 
 		$selector = isset( $_POST['selector'] ) ? sanitize_text_field( wp_unslash( $_POST['selector'] ) ) : '';
 		$label    = isset( $_POST['label'] ) ? sanitize_text_field( wp_unslash( $_POST['label'] ) ) : '';
@@ -292,6 +297,11 @@ class Core {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'zenadmin' ) ) );
 		}
+		
+		// Check if settings are locked
+		if ( $this->is_settings_locked() ) {
+			wp_send_json_error( array( 'message' => __( 'Settings are locked. Modifications are disabled.', 'zenadmin' ) ) );
+		}
 
 		$hash      = isset( $_POST['id'] ) ? sanitize_text_field( wp_unslash( $_POST['id'] ) ) : '';
 		$blacklist = get_option( 'zenadmin_blacklist', array() );
@@ -313,6 +323,11 @@ class Core {
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'zenadmin' ) ) );
+		}
+		
+		// Check if settings are locked
+		if ( $this->is_settings_locked() ) {
+			wp_send_json_error( array( 'message' => __( 'Settings are locked. Modifications are disabled.', 'zenadmin' ) ) );
 		}
 
 		$hash = isset( $_POST['id'] ) ? sanitize_text_field( wp_unslash( $_POST['id'] ) ) : '';
@@ -530,5 +545,14 @@ class Core {
 		}
 		
 		return $valid_roles;
+	}
+	
+	/**
+	 * Check if settings are locked via ZENADMIN_LOCK_SETTINGS constant.
+	 *
+	 * @return bool True if settings are locked, false otherwise.
+	 */
+	private function is_settings_locked() {
+		return defined( 'ZENADMIN_LOCK_SETTINGS' ) && ZENADMIN_LOCK_SETTINGS;
 	}
 }
