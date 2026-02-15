@@ -73,53 +73,69 @@
             }
 
             // Render Content
-            this.modal.innerHTML = `
-                <h2 id="zenadmin-modal-title">
-                    <span class="dashicons dashicons-shield"></span>
-                    ${config.title || 'Block Element'}
-                </h2>
-                <div class="zenadmin-modal-body">
-                    <div class="zenadmin-warning" id="zenadmin-specificity-warning">
+            if (config.type === 'confirm') {
+                this.modal.innerHTML = `
+                    <h2 id="zenadmin-modal-title">
                         <span class="dashicons dashicons-warning"></span>
-                        ${config.warning || 'Warning: This selector matches multiple elements.'}
+                        ${config.title || 'Confirm Action'}
+                    </h2>
+                    <div class="zenadmin-modal-body">
+                        <p>${this.escapeHtml(config.message || 'Are you sure?')}</p>
                     </div>
-                    
-                    <div class="zenadmin-field">
-                        <label>${config.i18n.label || 'Label'}</label>
-                        <input type="text" id="zenadmin-label-input" value="${this.escapeHtml(config.label)}" placeholder="e.g. Annoying Banner">
+                    <div class="zenadmin-modal-footer">
+                        <button class="zenadmin-btn zenadmin-btn-secondary" id="zenadmin-cancel-btn">${config.i18n.cancel || 'Cancel'}</button>
+                        <button class="zenadmin-btn zenadmin-btn-primary" id="zenadmin-confirm-btn">${config.i18n.confirm || 'Confirm'}</button>
                     </div>
+                `;
+            } else {
+                this.modal.innerHTML = `
+                    <h2 id="zenadmin-modal-title">
+                        <span class="dashicons dashicons-shield"></span>
+                        ${config.title || 'Block Element'}
+                    </h2>
+                    <div class="zenadmin-modal-body">
+                        <div class="zenadmin-warning" id="zenadmin-specificity-warning">
+                            <span class="dashicons dashicons-warning"></span>
+                            ${config.warning || 'Warning: This selector matches multiple elements.'}
+                        </div>
+                        
+                        <div class="zenadmin-field">
+                            <label>${config.i18n.label || 'Label'}</label>
+                            <input type="text" id="zenadmin-label-input" value="${this.escapeHtml(config.label)}" placeholder="e.g. Annoying Banner">
+                        </div>
 
-                    <div class="zenadmin-field">
-                        <label>Target Selector</label>
-                        <code>${this.escapeHtml(config.selector)}</code>
-                    </div>
+                        <div class="zenadmin-field">
+                            <label>Target Selector</label>
+                            <code>${this.escapeHtml(config.selector)}</code>
+                        </div>
 
-                    <div class="zenadmin-field zenadmin-roles-field">
-                        <label>${config.i18n.hiddenFor || 'Hide for roles:'}</label>
-                        <div class="zenadmin-roles-list">
-                            ${rolesHtml}
+                        <div class="zenadmin-field zenadmin-roles-field">
+                            <label>${config.i18n.hiddenFor || 'Hide for roles:'}</label>
+                            <div class="zenadmin-roles-list">
+                                ${rolesHtml}
+                            </div>
+                        </div>
+
+                        <div class="zenadmin-field">
+                             <label>
+                                <input type="checkbox" id="zenadmin-session-only"> 
+                                ${config.i18n.sessionOnly || 'Hide for this session only'}
+                            </label>
                         </div>
                     </div>
-
-                    <div class="zenadmin-field">
-                         <label>
-                            <input type="checkbox" id="zenadmin-session-only"> 
-                            ${config.i18n.sessionOnly || 'Hide for this session only'}
-                        </label>
+                    <div class="zenadmin-modal-footer">
+                        <button class="zenadmin-btn zenadmin-btn-secondary" id="zenadmin-cancel-btn">${config.i18n.cancel || 'Cancel'}</button>
+                        <button class="zenadmin-btn zenadmin-btn-preview" id="zenadmin-preview-btn" title="Preview hiding this element">
+                            <span class="dashicons dashicons-visibility"></span>
+                            ${config.i18n.preview || 'Preview'}
+                        </button>
+                        <button class="zenadmin-btn zenadmin-btn-primary" id="zenadmin-confirm-btn">${config.i18n.confirm || 'Hide Element'}</button>
                     </div>
-                </div>
-                <div class="zenadmin-modal-footer">
-                    <button class="zenadmin-btn zenadmin-btn-secondary" id="zenadmin-cancel-btn">${config.i18n.cancel || 'Cancel'}</button>
-                    <button class="zenadmin-btn zenadmin-btn-preview" id="zenadmin-preview-btn" title="Preview hiding this element">
-                        <span class="dashicons dashicons-visibility"></span>
-                        ${config.i18n.preview || 'Preview'}
-                    </button>
-                    <button class="zenadmin-btn zenadmin-btn-primary" id="zenadmin-confirm-btn">${config.i18n.confirm || 'Hide Element'}</button>
-                </div>
-            `;
+                `;
+            }
 
             // Insert "Restrict Access" field if URL is present (before Session checkbox)
-            if (config.targetUrl) {
+            if (config.targetUrl && config.type !== 'confirm') {
                 const sessionField = this.modal.querySelector('#zenadmin-session-only').closest('.zenadmin-field');
                 const hardBlockHtml = `
                     <div class="zenadmin-field" style="margin-bottom: 10px; border-left: 3px solid #d63638; padding-left: 10px;">
@@ -151,6 +167,12 @@
             });
 
             document.getElementById('zenadmin-confirm-btn').addEventListener('click', () => {
+                if (config.type === 'confirm') {
+                    if (config.onConfirm) config.onConfirm();
+                    this.close();
+                    return;
+                }
+
                 const label = document.getElementById('zenadmin-label-input').value;
                 const isSession = document.getElementById('zenadmin-session-only').checked;
 
@@ -181,41 +203,43 @@
             const previewBtn = document.getElementById('zenadmin-preview-btn');
             const targetElement = config.element; // Element to preview
 
-            previewBtn.addEventListener('click', () => {
-                if (!targetElement) return;
+            if (previewBtn) {
+                previewBtn.addEventListener('click', () => {
+                    if (!targetElement) return;
 
-                isPreviewActive = !isPreviewActive;
+                    isPreviewActive = !isPreviewActive;
 
-                if (isPreviewActive) {
-                    // Hide element temporarily
-                    targetElement.style.transition = 'opacity 0.3s ease';
-                    targetElement.style.opacity = '0';
-                    setTimeout(() => {
-                        targetElement.style.display = 'none';
-                    }, 300);
+                    if (isPreviewActive) {
+                        // Hide element temporarily
+                        targetElement.style.transition = 'opacity 0.3s ease';
+                        targetElement.style.opacity = '0';
+                        setTimeout(() => {
+                            targetElement.style.display = 'none';
+                        }, 300);
 
-                    // Update button
-                    previewBtn.innerHTML = `
-                        <span class="dashicons dashicons-hidden"></span>
-                        ${config.i18n.restore || 'Restore'}
-                    `;
-                    previewBtn.classList.add('zenadmin-btn-active');
-                } else {
-                    // Restore element
-                    targetElement.style.display = '';
-                    targetElement.style.opacity = '0';
-                    setTimeout(() => {
-                        targetElement.style.opacity = '1';
-                    }, 10);
+                        // Update button
+                        previewBtn.innerHTML = `
+                            <span class="dashicons dashicons-hidden"></span>
+                            ${config.i18n.restore || 'Restore'}
+                        `;
+                        previewBtn.classList.add('zenadmin-btn-active');
+                    } else {
+                        // Restore element
+                        targetElement.style.display = '';
+                        targetElement.style.opacity = '0';
+                        setTimeout(() => {
+                            targetElement.style.opacity = '1';
+                        }, 10);
 
-                    // Update button
-                    previewBtn.innerHTML = `
-                        <span class="dashicons dashicons-visibility"></span>
-                        ${config.i18n.preview || 'Preview'}
-                    `;
-                    previewBtn.classList.remove('zenadmin-btn-active');
-                }
-            });
+                        // Update button
+                        previewBtn.innerHTML = `
+                            <span class="dashicons dashicons-visibility"></span>
+                            ${config.i18n.preview || 'Preview'}
+                        `;
+                        previewBtn.classList.remove('zenadmin-btn-active');
+                    }
+                });
+            }
 
             // Clean up preview on cancel
             const originalCancelHandler = document.getElementById('zenadmin-cancel-btn');

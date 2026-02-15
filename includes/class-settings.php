@@ -352,21 +352,31 @@ class Settings {
 					// Delete handler
 					$('.zenadmin-delete-btn').on('click', function(e) {
 						e.preventDefault();
-						if (!confirm('<?php esc_html_e( 'Are you sure?', 'zenadmin' ); ?>')) return;
 						
 						var btn = $(this);
 						var id = btn.data('id');
-						
-						$.post(ajaxurl, {
-							action: 'zenadmin_delete_block',
-							security: '<?php echo wp_create_nonce( 'zenadmin_nonce' ); ?>',
-							id: id
-						}, function(response) {
-							if (response.success) {
-								btn.closest('tr').fadeOut();
-								ZenAdminToast.success('<?php esc_html_e( 'Block deleted successfully!', 'zenadmin' ); ?>');
-							} else {
-								ZenAdminToast.error(response.data.message);
+
+						ZenAdminModal.open({
+							type: 'confirm',
+							title: '<?php esc_html_e( 'Delete Block', 'zenadmin' ); ?>',
+							message: '<?php esc_html_e( 'Are you sure you want to delete this block?', 'zenadmin' ); ?>',
+							i18n: {
+								cancel: '<?php esc_html_e( 'Cancel', 'zenadmin' ); ?>',
+								confirm: '<?php esc_html_e( 'Delete', 'zenadmin' ); ?>'
+							},
+							onConfirm: function() {
+								$.post(ajaxurl, {
+									action: 'zenadmin_delete_block',
+									security: '<?php echo wp_create_nonce( 'zenadmin_nonce' ); ?>',
+									id: id
+								}, function(response) {
+									if (response.success) {
+										btn.closest('tr').fadeOut();
+										ZenAdminToast.success('<?php esc_html_e( 'Block deleted successfully!', 'zenadmin' ); ?>');
+									} else {
+										ZenAdminToast.error(response.data.message);
+									}
+								});
 							}
 						});
 					});

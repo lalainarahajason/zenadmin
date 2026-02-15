@@ -221,22 +221,6 @@
                         }
                     }
                 } else {
-                    // TOP-LEVEL MENU: Check if it has submenus
-                    const hasSubmenu = adminMenuLi.classList.contains('wp-has-submenu');
-
-                    if (hasSubmenu) {
-                        // CRITICAL FIX: For parent menus with submenus, target the anchor ONLY
-                        // This prevents hiding all submenus when blocking the parent
-                        const mainLink = adminMenuLi.querySelector('a.menu-top');
-                        if (mainLink) {
-                            const hrefAttr = mainLink.getAttribute('href');
-                            if (hrefAttr && hrefAttr !== '#') {
-                                // Target the specific anchor, not the li
-                                return `#adminmenu a.menu-top[href="${hrefAttr.replace(/"/g, '\\"')}"]`;
-                            }
-                        }
-                    }
-
                     // For menus WITHOUT submenus, safe to target the li directly
                     if (adminMenuLi.id && !/(\d{3,}|[-_]\d+)/.test(adminMenuLi.id)) {
                         const safeId = window.CSS && window.CSS.escape ? window.CSS.escape(adminMenuLi.id) : adminMenuLi.id;
