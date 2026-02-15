@@ -1,0 +1,59 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, unit-test ]
+  pull_request:
+    branches: [ main, unit-test ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: wordpress_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
+        tools: composer, cs2pr
+        coverage: none
+
+    - name: Install JS Dependencies
+      run: npm ci
+
+    - name: Install PHP Dependencies
+      run: composer install --prefer-dist --no-progress
+
+    - name: Lint JS
+      run: npm run lint:js
+
+    - name: Lint PHP
+      run: composer run lint
+
+    - name: Run JS Tests
+      run: npm run test:js
+
+    - name: Start WordPress Environment (wp-env)
+      run: npm run env:start
+      
+    - name: Run PHP Tests (Integration via wp-env)
+      run: npm run test:php

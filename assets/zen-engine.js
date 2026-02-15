@@ -434,4 +434,9 @@
         Engine.init();
     });
 
+    // Expose for testing
+    if (typeof window !== 'undefined') {
+        window.ZenAdminEngine = Engine;
+    }
+
 })(window, document, jQuery);

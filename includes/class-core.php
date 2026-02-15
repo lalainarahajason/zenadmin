@@ -532,7 +532,7 @@ class Core {
 	 * @param array $roles Array of role slugs to validate.
 	 * @return array Filtered array containing only valid role slugs.
 	 */
-	private function validate_roles( $roles ) {
+	protected function validate_roles( $roles ) {
 		if ( ! is_array( $roles ) ) {
 			return array();
 		}

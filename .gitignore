@@ -2,9 +2,9 @@ vendor/wp-config.php
 wp-config.php
 .env
 vendor/
-.DS_Store
-debug_logic.php
-debug_reset.php
-.env.example
+node_modules/
 .wp-env.json
-uploads/
+*.cakex
+*.tar.gz
+.phpunit.result.cache
+tests/phpunit/wordpress-tests-lib/
