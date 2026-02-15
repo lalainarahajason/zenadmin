@@ -15,6 +15,9 @@
         "lint": "phpcs --standard=WordPress-Core includes/ zenadmin.php"
     },
     "config": {
+        "platform": {
+            "php": "8.1"
+        },
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
