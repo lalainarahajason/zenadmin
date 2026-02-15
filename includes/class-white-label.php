@@ -41,6 +41,9 @@ class White_Label {
 
 		// 4. Global Hard Blocking
 		add_action( 'admin_init', array( $this, 'enforce_global_hard_blocks' ) );
+
+		// 5. Admin Color Scheme
+		add_action( 'admin_head', array( $this, 'inject_admin_colors' ) );
 	}
 
 	/**
@@ -445,5 +448,179 @@ class White_Label {
 				exit;
 			}
 		}
+	}
+
+	/**
+	 * Inject Admin Colors (Pro).
+	 */
+	public function inject_admin_colors() {
+		$options = get_option( 'zenadmin_white_label', array() );
+		if ( empty( $options['enabled'] ) ) {
+			return;
+		}
+
+		$primary    = ! empty( $options['wl_admin_primary'] ) ? $options['wl_admin_primary'] : '';
+		$sidebar_bg = ! empty( $options['wl_admin_sidebar_bg'] ) ? $options['wl_admin_sidebar_bg'] : '';
+		$accent     = ! empty( $options['wl_admin_accent'] ) ? $options['wl_admin_accent'] : '';
+		$admin_bar  = ! empty( $options['wl_admin_bar_bg'] ) ? $options['wl_admin_bar_bg'] : '';
+
+		if ( ! $primary && ! $sidebar_bg && ! $accent && ! $admin_bar ) {
+			return;
+		}
+
+		$css = '';
+
+		// 1. Sidebar Background & Text Contrast
+		// Default to dark sidebar (white text) if no custom bg is set
+		$text_color = '#fff';
+		
+		if ( $sidebar_bg ) {
+			$css .= "
+				#adminmenuback, #adminmenuwrap, #adminmenu, #adminmenu .wp-submenu {
+					background-color: {$sidebar_bg} !important;
+				}
+			";
+
+			// Smart Contrast for Sidebar Text
+			$luminance = $this->get_luminance( $sidebar_bg );
+			$text_color = ( $luminance > 0.5 ) ? '#1d2327' : '#fff';
+		}
+
+		// Apply Sidebar Text Color (globally or just when custom BG is set? 
+		// If custom BG is set, we MUST apply it. 
+		// If not, we can still force it if we want to ensure consistency with the active item logic below, 
+		// but standard WP is fine. Let's apply it if $sidebar_bg is set OR if we need to force white for active items).
+		
+		if ( $sidebar_bg ) {
+			$css .= "
+				#adminmenu a {
+					color: {$text_color} !important;
+				}
+				#adminmenu .wp-submenu a {
+					color: {$text_color} !important;
+				}
+				#adminmenu div.wp-menu-image:before {
+					color: {$text_color} !important;
+				}
+			";
+		}
+		
+		// 1.5 Admin Bar Background
+		if ( $admin_bar ) {
+			$css .= "
+				#wpadminbar {
+					background-color: {$admin_bar} !important;
+				}
+			";
+			
+			// Smart Contrast for Admin Bar
+			$ab_luminance = $this->get_luminance( $admin_bar );
+			$ab_text_color = ( $ab_luminance > 0.5 ) ? '#1d2327' : '#fff';
+			$ab_icon_color = ( $ab_luminance > 0.5 ) ? '#1d2327' : '#a7aaad'; // Standard grey for icons on dark, dark on light
+			
+			$css .= "
+				#wpadminbar .ab-item, 
+				#wpadminbar a.ab-item, 
+				#wpadminbar > #wp-toolbar > #wp-admin-bar-root-default .ab-icon, 
+				#wpadminbar .ab-icon, 
+				#wpadminbar .ab-label {
+					color: {$ab_text_color} !important;
+				}
+				
+				/* Fix icons color specifically if needed */
+				#wpadminbar .ab-icon:before {
+					color: {$ab_icon_color} !important;
+				}
+			";
+		}
+
+		// 2. Primary Color (Buttons & Links)
+		if ( $primary ) {
+			$css .= "
+				a {
+					color: {$primary};
+				}
+				.wp-core-ui .button-primary {
+					background-color: {$primary} !important;
+					border-color: {$primary} !important;
+				}
+				.wp-core-ui .button-primary:hover, .wp-core-ui .button-primary:focus {
+					background-color: {$primary} !important;
+					border-color: {$primary} !important;
+					filter: brightness(0.9);
+				}
+				input[type=checkbox]:checked:before {
+					color: {$primary} !important;
+				}
+				input[type=radio]:checked:before {
+					background-color: {$primary} !important;
+				}
+				.wp-core-ui .wp-ui-primary {
+					color: #fff;
+					background-color: {$primary};
+				}
+				
+				/* Plugin List Borders (Active Row) */
+				.plugins .active th.check-column, 
+				.plugin-update-tr.active td {
+					border-left-color: {$primary} !important;
+				}
+			";
+		}
+
+		// 3. Accent Color (Active Menu Items)
+		if ( $accent ) {
+			$css .= "
+				#adminmenu li.current a.menu-top,
+				#adminmenu li.wp-has-current-submenu a.wp-has-current-submenu,
+				#adminmenu li.current div.wp-menu-image:before,
+				#adminmenu li.wp-has-current-submenu div.wp-menu-image:before,
+				#adminmenu a:hover,
+				#adminmenu li.menu-top:hover,
+				#adminmenu li.opensub > a.menu-top,
+				#adminmenu li > a.menu-top:focus {
+					background-color: {$accent} !important;
+					color: #fff !important;
+				}
+				
+				/* Submenu active state */
+				#adminmenu .wp-submenu li.current a,
+				#adminmenu .wp-submenu li.current a:hover,
+				#adminmenu .wp-submenu li.current a:focus,
+				#adminmenu a:hover,
+				#adminmenu .wp-submenu a:focus,
+				#adminmenu .wp-submenu a:hover {
+					color: {$text_color} !important; /* Use high-contrast text color instead of accent */
+					font-weight: 600;
+				}
+			";
+		}
+
+		echo '<style type="text/css" id="zenadmin-admin-colors">' . $css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	}
+
+	/**
+	 * Calculate relative luminance of a hex color.
+	 *
+	 * @param string $hex Hex color code.
+	 * @return float Luminance (0.0 to 1.0).
+	 */
+	private function get_luminance( $hex ) {
+		$hex = str_replace( '#', '', $hex );
+		
+		// Map simple names to hex if needed, but wp-color-picker usually returns hex
+		if ( 3 === strlen( $hex ) ) {
+			$hex = str_repeat( substr( $hex, 0, 1 ), 2 ) . str_repeat( substr( $hex, 1, 1 ), 2 ) . str_repeat( substr( $hex, 2, 1 ), 2 );
+		}
+		
+		$r = hexdec( substr( $hex, 0, 2 ) ) / 255;
+		$g = hexdec( substr( $hex, 2, 2 ) ) / 255;
+		$b = hexdec( substr( $hex, 4, 2 ) ) / 255;
+		
+		$r = ( $r <= 0.03928 ) ? $r / 12.92 : pow( ( $r + 0.055 ) / 1.055, 2.4 );
+		$g = ( $g <= 0.03928 ) ? $g / 12.92 : pow( ( $g + 0.055 ) / 1.055, 2.4 );
+		$b = ( $b <= 0.03928 ) ? $b / 12.92 : pow( ( $b + 0.055 ) / 1.055, 2.4 );
+		
+		return 0.2126 * $r + 0.7152 * $g + 0.0722 * $b;
 	}
 }

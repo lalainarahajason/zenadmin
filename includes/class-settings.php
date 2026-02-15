@@ -36,10 +36,13 @@ class Settings {
 		}
 
 		wp_enqueue_media();
+		wp_enqueue_style( 'wp-color-picker' );
+		wp_enqueue_script( 'wp-color-picker' );
 
-		// Inline JS for Media Uploader
+		// Inline JS for Media Uploader & Color Picker
 		$script = "
 		jQuery(document).ready(function($){
+			// Media Uploader
 			$('.zenadmin-upload-btn').click(function(e) {
 				e.preventDefault();
 				var button = $(this);
@@ -55,6 +58,24 @@ class Settings {
 					var attachment = custom_uploader.state().get('selection').first().toJSON();
 					$('#' + inputId).val(attachment.url);
 				}).open();
+			});
+
+			// Color Picker
+			$('.zenadmin-color-field').wpColorPicker();
+
+			// Reset Colors
+			$('#zenadmin-reset-colors').click(function(e) {
+				e.preventDefault();
+				if (confirm('" . esc_js( __( 'Are you sure you want to reset all admin colors?', 'zenadmin' ) ) . "')) {
+					$('.zenadmin-color-field').each(function() {
+						var defaultColor = $(this).data('default-color');
+						$(this).wpColorPicker('color', defaultColor);
+					});
+					// Auto-save to persist changes
+					setTimeout(function() {
+						$('#submit').click();
+					}, 100);
+				}
 			});
 		});
 		";
@@ -647,6 +668,7 @@ class Settings {
 						</td>
 					</tr>
 				</table>
+				<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="<?php esc_attr_e( 'Save Changes', 'zenadmin' ); ?>"></p>
 
 				<hr>
 
@@ -678,11 +700,57 @@ class Settings {
 							<input type="color" name="zenadmin_white_label[wl_login_btn_color]" value="<?php echo isset( $options['wl_login_btn_color'] ) ? esc_attr( $options['wl_login_btn_color'] ) : '#2271b1'; ?>">
 						</td>
 					</tr>
+					</tr>
 				</table>
+				<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="<?php esc_attr_e( 'Save Changes', 'zenadmin' ); ?>"></p>
 
 				<hr>
 
-				<h3><?php esc_html_e( '3. Interface & Dashboard', 'zenadmin' ); ?></h3>
+				<h3><?php esc_html_e( '3. Admin Color Scheme (Pro)', 'zenadmin' ); ?></h3>
+				<table class="form-table">
+					<tr valign="top">
+						<th scope="row"><?php esc_html_e( 'Primary Color', 'zenadmin' ); ?></th>
+						<td>
+							<input type="text" name="zenadmin_white_label[wl_admin_primary]" value="<?php echo isset( $options['wl_admin_primary'] ) ? esc_attr( $options['wl_admin_primary'] ) : '#2271b1'; ?>" class="zenadmin-color-field" data-default-color="#2271b1">
+							<p class="description"><?php esc_html_e( 'Main buttons, links, and highlights.', 'zenadmin' ); ?></p>
+						</td>
+					</tr>
+					<tr valign="top">
+						<th scope="row"><?php esc_html_e( 'Sidebar Background', 'zenadmin' ); ?></th>
+						<td>
+							<input type="text" name="zenadmin_white_label[wl_admin_sidebar_bg]" value="<?php echo isset( $options['wl_admin_sidebar_bg'] ) ? esc_attr( $options['wl_admin_sidebar_bg'] ) : '#1d2327'; ?>" class="zenadmin-color-field" data-default-color="#1d2327">
+							<p class="description"><?php esc_html_e( 'Background color of the admin menu.', 'zenadmin' ); ?></p>
+						</td>
+					</tr>
+					<tr valign="top">
+						<th scope="row"><?php esc_html_e( 'Accent Color', 'zenadmin' ); ?></th>
+						<td>
+							<input type="text" name="zenadmin_white_label[wl_admin_accent]" value="<?php echo isset( $options['wl_admin_accent'] ) ? esc_attr( $options['wl_admin_accent'] ) : '#2271b1'; ?>" class="zenadmin-color-field" data-default-color="#2271b1">
+							<p class="description"><?php esc_html_e( 'Active menu items and notification bubbles.', 'zenadmin' ); ?></p>
+						</td>
+					</tr>
+					<tr valign="top">
+						<th scope="row"><?php esc_html_e( 'Admin Bar Background', 'zenadmin' ); ?></th>
+						<td>
+							<input type="text" name="zenadmin_white_label[wl_admin_bar_bg]" value="<?php echo isset( $options['wl_admin_bar_bg'] ) ? esc_attr( $options['wl_admin_bar_bg'] ) : '#1d2327'; ?>" class="zenadmin-color-field" data-default-color="#1d2327">
+							<p class="description"><?php esc_html_e( 'Background color of the top admin bar.', 'zenadmin' ); ?></p>
+						</td>
+					</tr>
+					<tr valign="top">
+						<th scope="row"></th>
+						<td>
+							<button type="button" id="zenadmin-reset-colors" class="button button-secondary">
+								<span class="dashicons dashicons-undo" style="vertical-align:middle;margin-right:4px;"></span>
+								<?php esc_html_e( 'Reset Colors', 'zenadmin' ); ?>
+							</button>
+							<p class="description"><?php esc_html_e( 'Revert to default WordPress colors.', 'zenadmin' ); ?></p>
+					</tr>
+				</table>
+				<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="<?php esc_attr_e( 'Save Changes', 'zenadmin' ); ?>"></p>
+
+				<hr>
+
+				<h3><?php esc_html_e( '4. Interface & Dashboard', 'zenadmin' ); ?></h3>
 				<table class="form-table">
 					<tr valign="top">
 						<th scope="row"><?php esc_html_e( 'Admin Footer Text', 'zenadmin' ); ?></th>
@@ -732,7 +800,7 @@ class Settings {
 
 				<hr>
 
-				<h3><?php esc_html_e( '4. Global Access Control (Hard Blocking)', 'zenadmin' ); ?></h3>
+				<h3><?php esc_html_e( '5. Global Access Control (Hard Blocking)', 'zenadmin' ); ?></h3>
 				<p class="description"><?php esc_html_e( 'Restrict access to specific admin pages for certain roles. Admins are immune.', 'zenadmin' ); ?></p>
 				<table class="form-table">
 					<tr valign="top">
