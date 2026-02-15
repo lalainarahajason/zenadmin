@@ -94,6 +94,7 @@ final class ZenAdmin {
 		add_action( 'plugins_loaded', array( $this, 'init' ) );
 		register_activation_hook( __FILE__, array( $this, 'activate' ) );
 		register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
+		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
 	}
 
 	/**
@@ -140,6 +141,18 @@ final class ZenAdmin {
 	 */
 	public function deactivate() {
 		// Flush rewrite rules if needed, or cleanup temporary data
+	}
+
+	/**
+	 * Add specific links to the plugin action links.
+	 *
+	 * @param array $links Plugin action links.
+	 * @return array Modified links.
+	 */
+	public function plugin_action_links( $links ) {
+		$settings_link = '<a href="' . admin_url( 'options-general.php?page=zenadmin' ) . '">' . __( 'Settings', 'zenadmin' ) . '</a>';
+		array_unshift( $links, $settings_link );
+		return $links;
 	}
 }
 
