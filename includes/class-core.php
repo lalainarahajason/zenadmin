@@ -33,6 +33,7 @@ class Core {
 		add_action( 'admin_init', array( $this, 'enforce_hard_blocks' ) ); // Hard Blocking Enforcement
 		add_action( 'admin_init', array( $this, 'handle_safe_mode_toggle' ) ); // Safe Mode Toggle Handler
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+
 		add_action( 'admin_head', array( $this, 'inject_styles' ), 999 );
 		add_action( 'admin_bar_menu', array( $this, 'admin_bar_menu' ), 100 );
 		add_action( 'wp_ajax_zenadmin_save_block', array( $this, 'ajax_save_block' ) );
@@ -83,6 +84,8 @@ class Core {
 			)
 		);
 	}
+
+
 
 	/**
 	 * Inject blocking styles into admin head.
@@ -180,11 +183,13 @@ class Core {
 				'zenadmin_toggle_safe_mode'
 			);
 			
+			$safe_mode_text = $is_safe_mode ? __( 'Exit Safe Mode', 'zenadmin' ) : __( 'Activate Safe Mode', 'zenadmin' );
+
 			$wp_admin_bar->add_node(
 				array(
 					'parent' => 'zenadmin-parent',
 					'id'     => 'zenadmin-safe-mode',
-					'title'  => $is_safe_mode ? __( 'Exit Safe Mode', 'zenadmin' ) : __( 'Activate Safe Mode', 'zenadmin' ),
+					'title'  => $safe_mode_text,
 					'href'   => $toggle_url,
 					'meta'   => array( 'class' => $is_safe_mode ? '' : 'zenadmin-danger-item' ),
 				)
@@ -209,9 +214,13 @@ class Core {
 				'id'     => 'zenadmin-reset-all',
 				'title'  => __( 'Reset All Settings', 'zenadmin' ),
 				'href'   => $reset_url,
-				'meta'   => array( 'class' => 'zenadmin-reset-item' ),
+				'meta'   => array(
+					'class'   => 'zenadmin-danger-item',
+					'onclick' => 'return confirm("' . esc_js( __( 'Are you sure you want to reset all ZenAdmin settings? This cannot be undone.', 'zenadmin' ) ) . '");',
+				),
 			)
 		);
+
 	}
 
 	/**

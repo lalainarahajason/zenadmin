@@ -200,14 +200,17 @@ class White_Label {
 			$btn_color = sanitize_hex_color( $options['wl_login_btn_color'] );
 			if ( $btn_color ) {
 				$css .= "
-					.wp-core-ui .button-primary {
-						background-color: {$btn_color};
-						border-color: {$btn_color};
+					body.login .button-primary {
+						background-color: {$btn_color} !important;
+						border-color: {$btn_color} !important;
+						box-shadow: none !important;
+						text-shadow: none !important;
 					}
-					.wp-core-ui .button-primary:hover, .wp-core-ui .button-primary:focus {
-						background-color: {$btn_color};
-						border-color: {$btn_color};
-						filter: brightness(85%);
+					body.login .button-primary:hover,
+					body.login .button-primary:focus {
+						background-color: {$btn_color} !important;
+						border-color: {$btn_color} !important;
+						filter: brightness(0.9);
 					}
 				";
 			}

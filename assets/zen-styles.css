@@ -405,7 +405,3 @@ body.zenadmin-mode-active {
 .zenadmin-toast-info {
     border-left-color: #2271b1;
 }
-
-.zenadmin-toast-info .dashicons {
-    color: #2271b1;
-}
