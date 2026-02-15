@@ -372,7 +372,10 @@ class Settings {
 								}, function(response) {
 									if (response.success) {
 										btn.closest('tr').fadeOut();
-										ZenAdminToast.success('<?php esc_html_e( 'Block deleted successfully!', 'zenadmin' ); ?>');
+										ZenAdminToast.success('<?php esc_html_e( 'Block deleted successfully! Reloading...', 'zenadmin' ); ?>');
+										setTimeout(function() {
+											window.location.reload();
+										}, 1000);
 									} else {
 										ZenAdminToast.error(response.data.message);
 									}

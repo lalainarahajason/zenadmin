@@ -390,7 +390,12 @@
                 if (response.success) {
                     this.hideElement(selector);
                     this.toggleMode(false);
-                    ZenAdminToast.success('Element blocked successfully!');
+                    ZenAdminToast.success('Element blocked successfully! Reloading...'); // Updated message
+
+                    // Reload to confirm/clean up
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
                 } else {
                     ZenAdminToast.error('Error: ' + response.data.message);
                 }
