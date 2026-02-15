@@ -31,6 +31,7 @@ class Core {
 		$portability->init();
 
 		add_action( 'admin_init', array( $this, 'enforce_hard_blocks' ) ); // Hard Blocking Enforcement
+		add_action( 'admin_init', array( $this, 'handle_safe_mode_toggle' ) ); // Safe Mode Toggle Handler
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_head', array( $this, 'inject_styles' ), 999 );
 		add_action( 'admin_bar_menu', array( $this, 'admin_bar_menu' ), 100 );
@@ -169,25 +170,21 @@ class Core {
 			)
 		);
 
-		// Child Node: Safe Mode
-		$is_safe_mode = isset( $_GET['zenadmin_safe_mode'] ) && '1' === $_GET['zenadmin_safe_mode'];
-		if ( ! $is_safe_mode ) {
+		// Child Node: Safe Mode Toggle (secured with nonce)
+		if ( current_user_can( 'manage_options' ) ) {
+			$is_safe_mode = $this->is_safe_mode();
+			$toggle_url = wp_nonce_url(
+				admin_url( 'admin.php?action=zenadmin_toggle_safe_mode' ),
+				'zenadmin_toggle_safe_mode'
+			);
+			
 			$wp_admin_bar->add_node(
 				array(
 					'parent' => 'zenadmin-parent',
 					'id'     => 'zenadmin-safe-mode',
-					'title'  => __( 'Activate Safe Mode', 'zenadmin' ),
-					'href'   => add_query_arg( 'zenadmin_safe_mode', '1' ),
-					'meta'   => array( 'class' => 'zenadmin-danger-item' ),
-				)
-			);
-		} else {
-			$wp_admin_bar->add_node(
-				array(
-					'parent' => 'zenadmin-parent',
-					'id'     => 'zenadmin-exit-safe-mode',
-					'title'  => __( 'Exit Safe Mode', 'zenadmin' ),
-					'href'   => remove_query_arg( 'zenadmin_safe_mode' ),
+					'title'  => $is_safe_mode ? __( 'Exit Safe Mode', 'zenadmin' ) : __( 'Activate Safe Mode', 'zenadmin' ),
+					'href'   => $toggle_url,
+					'meta'   => array( 'class' => $is_safe_mode ? '' : 'zenadmin-danger-item' ),
 				)
 			);
 		}
@@ -345,12 +342,39 @@ class Core {
 	}
 
 	/**
-	 * Check if Safe Mode is active.
+	 * Handle Safe Mode toggle action (secured with nonce).
+	 */
+	public function handle_safe_mode_toggle() {
+		if ( ! isset( $_GET['action'] ) || 'zenadmin_toggle_safe_mode' !== $_GET['action'] ) {
+			return;
+		}
+		
+		// Verify nonce
+		check_admin_referer( 'zenadmin_toggle_safe_mode' );
+		
+		// Verify permissions
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'zenadmin' ) );
+		}
+		
+		// Toggle Safe Mode in user meta
+		$user_id = get_current_user_id();
+		$current = get_user_meta( $user_id, 'zenadmin_safe_mode', true );
+		update_user_meta( $user_id, 'zenadmin_safe_mode', ! $current );
+		
+		// Redirect back
+		wp_safe_redirect( wp_get_referer() ? wp_get_referer() : admin_url() );
+		exit;
+	}
+	
+	/**
+	 * Check if Safe Mode is active for current user.
 	 *
 	 * @return bool
 	 */
 	private function is_safe_mode() {
-		return isset( $_GET['zenadmin_safe_mode'] ) && '1' === $_GET['zenadmin_safe_mode'];
+		$user_id = get_current_user_id();
+		return (bool) get_user_meta( $user_id, 'zenadmin_safe_mode', true );
 	}
 
 	/**
