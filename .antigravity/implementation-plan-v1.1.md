@@ -8,8 +8,6 @@
 
 **Estimation**: 6-8 heures de développement + 2 heures de tests
 
----
-
 ## Phase 1: Sécurité Critique (Priorité: HAUTE)
 
 ### 1.1 Refonte du Hard Blocking
@@ -96,6 +94,56 @@ public function enforce_hard_blocks() {
 
 **Complexité**: Faible  
 **Temps estimé**: 45min
+
+---
+
+### 1.4 Sécurisation Safe Mode & Audit $_GET/$_POST
+**Fichiers**: [`class-core.php`](file:///Users/rahajason/Documents/haja/wp/ZenAdmin/includes/class-core.php), [`class-settings.php`](file:///Users/rahajason/Documents/haja/wp/ZenAdmin/includes/class-settings.php)
+
+#### Problème Critique Détecté
+Le Safe Mode peut être activé via `$_GET['zenadmin_safe_mode']` **sans aucune vérification de nonce ou de permissions** ! Cela permet à n'importe qui de bypasser les restrictions.
+
+#### Tâches
+- [ ] **CRITIQUE**: Sécuriser `is_safe_mode()` avec vérification de nonce
+- [ ] Ajouter `current_user_can('manage_options')` pour activer le Safe Mode
+- [ ] Créer une action admin sécurisée pour toggle le Safe Mode
+- [ ] Valider tous les `$_GET['tab']` avec une whitelist
+- [ ] Audit complet : scanner tous les `$_POST` et `$_GET` non protégés
+- [ ] Ajouter `wp_verify_nonce()` ou `check_admin_referer()` partout où nécessaire
+
+**Complexité**: Moyenne  
+**Temps estimé**: 1h30
+
+#### Code proposé pour Safe Mode
+```php
+// Nouvelle méthode sécurisée
+public function toggle_safe_mode() {
+    check_admin_referer( 'zenadmin_toggle_safe_mode' );
+    
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( __( 'Insufficient permissions', 'zenadmin' ) );
+    }
+    
+    $current = get_user_meta( get_current_user_id(), 'zenadmin_safe_mode', true );
+    update_user_meta( get_current_user_id(), 'zenadmin_safe_mode', ! $current );
+    
+    wp_safe_redirect( wp_get_referer() );
+    exit;
+}
+
+// Modifier is_safe_mode()
+public function is_safe_mode() {
+    // Vérifier user meta au lieu de $_GET
+    return (bool) get_user_meta( get_current_user_id(), 'zenadmin_safe_mode', true );
+}
+```
+
+#### Audit $_GET/$_POST
+| Fichier | Ligne | Variable | Protection | Action |
+|---------|-------|----------|------------|--------|
+| `class-core.php` | 173, 353 | `$_GET['zenadmin_safe_mode']` | ❌ Aucune | **Remplacer par user_meta** |
+| `class-settings.php` | 127 | `$_GET['tab']` | ⚠️ Sanitize only | Ajouter whitelist |
+| `class-portability.php` | 62 | `$_POST['zenadmin_overwrite']` | ✅ `check_admin_referer` | OK |
 
 ---
 
