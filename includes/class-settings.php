@@ -138,10 +138,10 @@ class Settings {
 			
 			<nav class="nav-tab-wrapper">
 				<a href="?page=zenadmin&tab=blocks" class="nav-tab <?php echo 'blocks' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Blocked Elements', 'zenadmin' ); ?></a>
-				<a href="?page=zenadmin&tab=templates" class="nav-tab <?php echo 'templates' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Templates', 'zenadmin' ); ?></a>
-				<a href="?page=zenadmin&tab=tools" class="nav-tab <?php echo 'tools' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Tools', 'zenadmin' ); ?></a>
 				<a href="?page=zenadmin&tab=white-label" class="nav-tab <?php echo 'white-label' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'White Label', 'zenadmin' ); ?></a>
 				<a href="?page=zenadmin&tab=help" class="nav-tab <?php echo 'help' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Help & Safe Mode', 'zenadmin' ); ?></a>
+				<a href="?page=zenadmin&tab=templates" class="nav-tab <?php echo 'templates' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Templates', 'zenadmin' ); ?></a>
+				<a href="?page=zenadmin&tab=tools" class="nav-tab <?php echo 'tools' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Tools', 'zenadmin' ); ?></a>
 			</nav>
 
 			<div class="zenadmin-content">
