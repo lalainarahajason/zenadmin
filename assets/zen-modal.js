@@ -125,10 +125,7 @@
                     </div>
                     <div class="zenadmin-modal-footer">
                         <button class="zenadmin-btn zenadmin-btn-secondary" id="zenadmin-cancel-btn">${config.i18n.cancel || 'Cancel'}</button>
-                        <button class="zenadmin-btn zenadmin-btn-preview" id="zenadmin-preview-btn" title="Preview hiding this element">
-                            <span class="dashicons dashicons-visibility"></span>
-                            ${config.i18n.preview || 'Preview'}
-                        </button>
+
                         <button class="zenadmin-btn zenadmin-btn-primary" id="zenadmin-confirm-btn">${config.i18n.confirm || 'Hide Element'}</button>
                     </div>
                 `;
@@ -198,59 +195,7 @@
                 this.close();
             });
 
-            // Preview Button: Toggle element visibility temporarily
-            let isPreviewActive = false;
-            const previewBtn = document.getElementById('zenadmin-preview-btn');
-            const targetElement = config.element; // Element to preview
 
-            if (previewBtn) {
-                previewBtn.addEventListener('click', () => {
-                    if (!targetElement) return;
-
-                    isPreviewActive = !isPreviewActive;
-
-                    if (isPreviewActive) {
-                        // Hide element temporarily
-                        targetElement.style.transition = 'opacity 0.3s ease';
-                        targetElement.style.opacity = '0';
-                        setTimeout(() => {
-                            targetElement.style.display = 'none';
-                        }, 300);
-
-                        // Update button
-                        previewBtn.innerHTML = `
-                            <span class="dashicons dashicons-hidden"></span>
-                            ${config.i18n.restore || 'Restore'}
-                        `;
-                        previewBtn.classList.add('zenadmin-btn-active');
-                    } else {
-                        // Restore element
-                        targetElement.style.display = '';
-                        targetElement.style.opacity = '0';
-                        setTimeout(() => {
-                            targetElement.style.opacity = '1';
-                        }, 10);
-
-                        // Update button
-                        previewBtn.innerHTML = `
-                            <span class="dashicons dashicons-visibility"></span>
-                            ${config.i18n.preview || 'Preview'}
-                        `;
-                        previewBtn.classList.remove('zenadmin-btn-active');
-                    }
-                });
-            }
-
-            // Clean up preview on cancel
-            const originalCancelHandler = document.getElementById('zenadmin-cancel-btn');
-            originalCancelHandler.addEventListener('click', () => {
-                if (isPreviewActive && targetElement) {
-                    // Restore element
-                    targetElement.style.display = '';
-                    targetElement.style.opacity = '1';
-                    targetElement.style.transition = '';
-                }
-            }, { once: true });
 
             // Trap Focus
             const focusable = this.modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
