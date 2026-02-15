@@ -125,7 +125,7 @@ class Settings {
 	 */
 	public function render_page() {
 		// Tab navigation with whitelist validation
-		$allowed_tabs = array( 'blocks', 'templates', 'tools', 'white-label', 'help' );
+		$allowed_tabs = array( 'blocks', 'templates', 'tools', 'white-label', 'help', 'documentation' );
 		$active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'blocks';
 		
 		// Validate against whitelist
@@ -142,6 +142,7 @@ class Settings {
 				<a href="?page=zenadmin&tab=help" class="nav-tab <?php echo 'help' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Help & Safe Mode', 'zenadmin' ); ?></a>
 				<a href="?page=zenadmin&tab=templates" class="nav-tab <?php echo 'templates' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Templates', 'zenadmin' ); ?></a>
 				<a href="?page=zenadmin&tab=tools" class="nav-tab <?php echo 'tools' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Tools', 'zenadmin' ); ?></a>
+				<a href="?page=zenadmin&tab=documentation" class="nav-tab <?php echo 'documentation' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'Documentation', 'zenadmin' ); ?></a>
 			</nav>
 
 			<div class="zenadmin-content">
@@ -156,6 +157,8 @@ class Settings {
 					$this->render_tools_tab();
 				} elseif ( 'white-label' === $active_tab ) {
 					$this->render_white_label_tab();
+				} elseif ( 'documentation' === $active_tab ) {
+					$this->render_documentation_tab();
 				} else {
 					$this->render_help_tab();
 				}
@@ -734,6 +737,243 @@ class Settings {
 				<?php submit_button(); ?>
 			</form>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Render Documentation Tab.
+	 */
+	private function render_documentation_tab() {
+		$white_label_enabled = false;
+		$white_label_options = get_option( 'zenadmin_white_label', array() );
+		if ( isset( $white_label_options['enabled'] ) && $white_label_options['enabled'] ) {
+			$white_label_enabled = true;
+		}
+		
+		// Inline Styles for Documentation Layout
+		?>
+		<style>
+			.zenadmin-doc-container {
+				display: grid;
+				grid-template-columns: 250px 1fr;
+				gap: 30px;
+				margin-top: 20px;
+				background: #fff;
+				border: 1px solid #ccd0d4;
+				box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+			}
+			.zenadmin-doc-sidebar {
+				background: #f8f9fa;
+				border-right: 1px solid #ccd0d4;
+				padding: 0;
+			}
+			.zenadmin-doc-sticky-wrapper {
+				position: sticky;
+				top: 40px;
+			}
+			.zenadmin-doc-nav {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+			.zenadmin-doc-nav li {
+				margin: 0;
+				border-bottom: 1px solid #eee;
+			}
+			.zenadmin-doc-nav a {
+				display: block;
+				padding: 15px 20px;
+				text-decoration: none;
+				color: #444;
+				font-weight: 500;
+				border-left: 3px solid transparent;
+				transition: all 0.2s;
+			}
+			.zenadmin-doc-nav a:hover, .zenadmin-doc-nav a.active {
+				background: #fff;
+				color: #2271b1;
+				border-left-color: #2271b1;
+			}
+			.zenadmin-doc-nav .dashicons {
+				margin-right: 8px;
+				color: #888;
+			}
+			.zenadmin-doc-content {
+				padding: 30px 40px;
+				max-width: 800px;
+			}
+			.zenadmin-doc-section {
+				margin-bottom: 50px;
+				padding-top: 20px;
+			}
+			.zenadmin-doc-section h2 {
+				font-size: 24px;
+				border-bottom: 2px solid #f0f0f1;
+				padding-bottom: 15px;
+				margin-bottom: 20px;
+			}
+			.zenadmin-doc-section h3 {
+				font-size: 18px;
+				margin-top: 30px;
+				margin-bottom: 15px;
+			}
+			.zenadmin-doc-section p {
+				font-size: 14px;
+				line-height: 1.6;
+				color: #3c434a;
+			}
+			.zenadmin-notice-pro {
+				background: #f0f6fc;
+				border-left: 4px solid #72aee6;
+				padding: 15px;
+				margin: 20px 0;
+			}
+			.zenadmin-code-block {
+				background: #f6f7f7;
+				border: 1px solid #dcdcde;
+				padding: 10px 15px;
+				border-radius: 4px;
+				font-family: monospace;
+				margin: 10px 0;
+				display: block;
+			}
+		</style>
+
+		<div class="zenadmin-doc-container">
+			<!-- Sidebar -->
+			<div class="zenadmin-doc-sidebar">
+				<div class="zenadmin-doc-sticky-wrapper">
+					<ul class="zenadmin-doc-nav">
+						<li>
+							<a href="#getting-started">
+								<span class="dashicons dashicons-welcome-learn-more"></span>
+								<?php esc_html_e( 'Getting Started', 'zenadmin' ); ?>
+							</a>
+						</li>
+						<li>
+							<a href="#advanced-selection">
+								<span class="dashicons dashicons-search"></span>
+								<?php esc_html_e( 'Advanced Selection', 'zenadmin' ); ?>
+							</a>
+						</li>
+						<li>
+							<a href="#role-management">
+								<span class="dashicons dashicons-admin-users"></span>
+								<?php esc_html_e( 'Role Management', 'zenadmin' ); ?>
+							</a>
+						</li>
+						<?php if ( $white_label_enabled ) : ?>
+						<li>
+							<a href="#white-label-guide">
+								<span class="dashicons dashicons-admin-appearance"></span>
+								<?php esc_html_e( 'White Label Guide', 'zenadmin' ); ?>
+							</a>
+						</li>
+						<?php endif; ?>
+						<li>
+							<a href="#troubleshooting">
+								<span class="dashicons dashicons-sos"></span>
+								<?php esc_html_e( 'Troubleshooting', 'zenadmin' ); ?>
+							</a>
+						</li>
+					</ul>
+					
+					<?php if ( $white_label_enabled ) : ?>
+						<div style="padding: 20px; text-align: center; border-top: 1px solid #ccd0d4; margin-top: 20px;">
+							<p style="margin-bottom:10px;"><strong><?php esc_html_e( 'Need Help?', 'zenadmin' ); ?></strong></p>
+							<a href="mailto:<?php echo esc_attr( get_bloginfo( 'admin_email' ) ); ?>" class="button button-secondary">
+								<?php esc_html_e( 'Contact Support', 'zenadmin' ); ?>
+							</a>
+						</div>
+					<?php endif; ?>
+				</div>
+			</div>
+
+			<!-- Content -->
+			<div class="zenadmin-doc-content">
+				
+				<!-- Getting Started -->
+				<section id="getting-started" class="zenadmin-doc-section">
+					<h2><?php esc_html_e( 'Getting Started', 'zenadmin' ); ?></h2>
+					<p><?php esc_html_e( 'ZenAdmin allows you to clean up your WordPress interface by simply pointing and clicking on elements you want to hide.', 'zenadmin' ); ?></p>
+					
+					<h3><?php esc_html_e( '1. Activation', 'zenadmin' ); ?></h3>
+					<p><?php esc_html_e( 'Look for the "Zen Mode" toggle in your top admin bar. Click it to activate the selection mode.', 'zenadmin' ); ?></p>
+					
+					<h3><?php esc_html_e( '2. Interaction', 'zenadmin' ); ?></h3>
+					<p><?php esc_html_e( 'Hover over any element on the page (menu items, dashboard widgets, notices). You will see a purple border highlighting the element. Click to open the blocking modal.', 'zenadmin' ); ?></p>
+					
+					<h3><?php esc_html_e( '3. Preview', 'zenadmin' ); ?></h3>
+					<div class="zenadmin-notice-pro">
+						<p><strong><?php esc_html_e( 'Pro Tip:', 'zenadmin' ); ?></strong> <?php esc_html_e( 'Use the "Preview" button (Eye icon) in the modal to see exactly what will be hidden before you confirm.', 'zenadmin' ); ?></p>
+					</div>
+				</section>
+
+				<!-- Advanced Selection -->
+				<section id="advanced-selection" class="zenadmin-doc-section">
+					<h2><?php esc_html_e( 'Advanced Selection Strategies', 'zenadmin' ); ?></h2>
+					
+					<h3><?php esc_html_e( 'Intelligent Targeting (HREF)', 'zenadmin' ); ?></h3>
+					<p><?php esc_html_e( 'ZenAdmin is smarter than standard CSS hiders. For menu items, we target the link destination (HREF) rather than just CSS IDs. This means even if a plugin updates and changes its ID, your block will likely remain active.', 'zenadmin' ); ?></p>
+					<code class="zenadmin-code-block">a[href="admin.php?page=my-plugin"]</code>
+
+					<h3><?php esc_html_e( 'Hard Blocking vs. Hiding', 'zenadmin' ); ?></h3>
+					<p><?php esc_html_e( ' Standard blocking only hides the element visually (CSS).', 'zenadmin' ); ?></p>
+					<p><?php esc_html_e( ' "Hard Blocking" (available in the modal for menu items) actually restricts access to the PHP page itself, redirecting unauthorized users to the dashboard.', 'zenadmin' ); ?></p>
+				</section>
+
+				<!-- Role Management -->
+				<section id="role-management" class="zenadmin-doc-section">
+					<h2><?php esc_html_e( 'Role Management', 'zenadmin' ); ?></h2>
+					<p><?php esc_html_e( 'You can control exactly who sees what.', 'zenadmin' ); ?></p>
+					
+					<ul>
+						<li><strong><?php esc_html_e( 'Global:', 'zenadmin' ); ?></strong> <?php esc_html_e( 'By default, blocks apply to all roles except you (the creator).', 'zenadmin' ); ?></li>
+						<li><strong><?php esc_html_e( 'Per-Block:', 'zenadmin' ); ?></strong> <?php esc_html_e( 'In the "Blocked Elements" tab, click the "Edit Roles" icon to select specific roles (e.g., hide "Tools" only for Editors).', 'zenadmin' ); ?></li>
+					</ul>
+				</section>
+
+				<?php if ( $white_label_enabled ) : ?>
+				<!-- White Label -->
+				<section id="white-label-guide" class="zenadmin-doc-section">
+					<h2><?php esc_html_e( 'White Label Guide', 'zenadmin' ); ?></h2>
+					<p><?php esc_html_e( 'Customize the WordPress experience for your clients.', 'zenadmin' ); ?></p>
+					
+					<h3><?php esc_html_e( 'Stealth Mode', 'zenadmin' ); ?></h3>
+					<p><?php esc_html_e( 'Enable "Stealth Mode" in the White Label tab to hide ZenAdmin itself from the plugins list. This prevents clients from accidentally deactivting the tool that keeps their interface clean.', 'zenadmin' ); ?></p>
+
+					<h3><?php esc_html_e( 'Login Customization', 'zenadmin' ); ?></h3>
+					<p><?php esc_html_e( 'Upload your agency logo to replace the WordPress logo on the wp-login.php page.', 'zenadmin' ); ?></p>
+				</section>
+				<?php endif; ?>
+
+				<!-- Troubleshooting -->
+				<section id="troubleshooting" class="zenadmin-doc-section">
+					<h2><?php esc_html_e( 'Troubleshooting', 'zenadmin' ); ?></h2>
+					
+					<h3><?php esc_html_e( 'Safe Mode', 'zenadmin' ); ?></h3>
+					<p><?php esc_html_e( 'If you accidentally blocked the settings menu and cannot access this page:', 'zenadmin' ); ?></p>
+					<code class="zenadmin-code-block"><?php echo esc_url( admin_url( '?zenadmin_safe_mode=1' ) ); ?></code>
+					<p><?php esc_html_e( 'Add ?zenadmin_safe_mode=1 to your URL to temporarily disable all blocks.', 'zenadmin' ); ?></p>
+
+					<h3><?php esc_html_e( 'Kill Switch', 'zenadmin' ); ?></h3>
+					<p><?php esc_html_e( 'For developers: You can disable ZenAdmin completely via wp-config.php:', 'zenadmin' ); ?></p>
+					<code class="zenadmin-code-block">define( 'ZENADMIN_DISABLE', true );</code>
+				</section>
+
+			</div>
+		</div>
+
+		<script>
+		// Simple smooth scrolling for internal links
+		jQuery(document).ready(function($) {
+			$('.zenadmin-doc-nav a').on('click', function(e) {
+				// Update active state
+				$('.zenadmin-doc-nav a').removeClass('active');
+				$(this).addClass('active');
+			});
+		});
+		</script>
 		<?php
 	}
 }
