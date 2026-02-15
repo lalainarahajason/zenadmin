@@ -124,7 +124,14 @@ class Settings {
 	 * Render the settings page.
 	 */
 	public function render_page() {
+		// Tab navigation with whitelist validation
+		$allowed_tabs = array( 'blocks', 'templates', 'tools', 'white-label', 'help' );
 		$active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'blocks';
+		
+		// Validate against whitelist
+		if ( ! in_array( $active_tab, $allowed_tabs, true ) ) {
+			$active_tab = 'blocks';
+		}
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'ZenAdmin Settings', 'zenadmin' ); ?></h1>
