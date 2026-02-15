@@ -71,11 +71,17 @@ class Templates {
 
 		$selectors_to_add = $templates[ $template_id ]['selectors'];
 		$current_blacklist = get_option( 'zenadmin_blacklist', array() );
+		
+		// Ensure it is an array (fix for PHP 8+ fatal errors if option is corrupted)
+		if ( ! is_array( $current_blacklist ) ) {
+			$current_blacklist = array();
+		}
+
 		$user_id           = get_current_user_id();
 		$time              = current_time( 'mysql' );
 
 		foreach ( $selectors_to_add as $selector ) {
-			$hash = hash( 'sha256', $selector . 'zenadmin' ); // Consistent hashing
+			$hash = md5( $selector ); // Consistent hashing with Core (MD5)
 			
 			if ( ! isset( $current_blacklist[ $hash ] ) ) {
 				$current_blacklist[ $hash ] = array(
