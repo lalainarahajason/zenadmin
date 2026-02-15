@@ -231,8 +231,8 @@ class Core {
 		if ( ! is_array( $hidden_for ) ) {
 			$hidden_for = array();
 		}
-		// Sanitize role slugs
-		$hidden_for = array_map( 'sanitize_key', $hidden_for );
+		// Validate role slugs (strict validation)
+		$hidden_for = $this->validate_roles( $hidden_for );
 
 		// Hard Block Fields
 		$target_url = isset( $_POST['target_url'] ) ? sanitize_text_field( wp_unslash( $_POST['target_url'] ) ) : '';
@@ -323,7 +323,8 @@ class Core {
 		if ( ! is_array( $hidden_for ) ) {
 			$hidden_for = array();
 		}
-		$hidden_for = array_map( 'sanitize_key', $hidden_for );
+		// Validate role slugs (strict validation)
+		$hidden_for = $this->validate_roles( $hidden_for );
 
 		if ( empty( $hash ) ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid block ID', 'zenadmin' ) ) );
@@ -497,5 +498,37 @@ class Core {
 		// This will be implemented in the White Label module
 		// For now, dashboard is never blocked via Hard Blocking
 		return false;
+	}
+	
+	/**
+	 * Validate and filter role slugs against WordPress registered roles.
+	 *
+	 * @param array $roles Array of role slugs to validate.
+	 * @return array Filtered array containing only valid role slugs.
+	 */
+	private function validate_roles( $roles ) {
+		if ( ! is_array( $roles ) ) {
+			return array();
+		}
+		
+		// Get WordPress roles object
+		if ( ! function_exists( 'wp_roles' ) ) {
+			require_once ABSPATH . 'wp-includes/pluggable.php';
+		}
+		
+		$wp_roles = wp_roles();
+		$valid_roles = array();
+		
+		foreach ( $roles as $role ) {
+			// Sanitize first
+			$role = sanitize_key( $role );
+			
+			// Validate against registered roles
+			if ( $wp_roles->is_role( $role ) ) {
+				$valid_roles[] = $role;
+			}
+		}
+		
+		return $valid_roles;
 	}
 }
