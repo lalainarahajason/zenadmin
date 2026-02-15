@@ -38,7 +38,7 @@ jobs:
         coverage: none
 
     - name: Install JS Dependencies
-      run: npm ci
+      run: npm install
 
     - name: Install PHP Dependencies
       run: composer install --prefer-dist --no-progress
