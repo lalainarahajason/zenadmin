@@ -22,7 +22,7 @@ class Settings {
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_menu_page' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
-		add_action( 'admin_post_zenadmin_apply_template', array( $this, 'handle_template_application' ) );
+
 		add_action( 'admin_post_zenadmin_reset_all', array( $this, 'handle_reset_all' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 	}
@@ -106,23 +106,7 @@ class Settings {
 	/**
 	 * Handle template application via admin-post.
 	 */
-	public function handle_template_application() {
-		check_admin_referer( 'zenadmin_apply_template' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( __( 'Unauthorized', 'zenadmin' ) );
-		}
-
-		$template_id = isset( $_POST['template_id'] ) ? sanitize_text_field( wp_unslash( $_POST['template_id'] ) ) : '';
-
-		if ( class_exists( 'ZenAdmin\\Templates' ) ) {
-			\ZenAdmin\Templates::apply_template( $template_id );
-			add_settings_error( 'zenadmin_messages', 'zenadmin_template_applied', __( 'Template applied successfully.', 'zenadmin' ), 'success' );
-		}
-
-		wp_safe_redirect( add_query_arg( 'settings-updated', 'true', admin_url( 'options-general.php?page=zenadmin&tab=templates' ) ) );
-		exit;
-	}
 
 	/**
 	 * Handle reset all data.
@@ -146,7 +130,7 @@ class Settings {
 	 */
 	public function render_page() {
 		// Tab navigation with whitelist validation
-		$allowed_tabs = array( 'blocks', 'templates', 'tools', 'white-label', 'help', 'documentation' );
+		$allowed_tabs = array( 'blocks', 'tools', 'white-label', 'help', 'documentation' );
 		$active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'blocks';
 		
 		// Validate against whitelist
@@ -187,10 +171,6 @@ class Settings {
 					<span class="dashicons dashicons-sos"></span>
 					<?php esc_html_e( 'Help & Safe Mode', 'zenadmin' ); ?>
 				</a>
-				<a href="?page=zenadmin&tab=templates" class="nav-tab <?php echo 'templates' === $active_tab ? 'nav-tab-active' : ''; ?>">
-					<span class="dashicons dashicons-layout"></span>
-					<?php esc_html_e( 'Templates', 'zenadmin' ); ?>
-				</a>
 				<a href="?page=zenadmin&tab=tools" class="nav-tab <?php echo 'tools' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<span class="dashicons dashicons-admin-tools"></span>
 					<?php esc_html_e( 'Tools', 'zenadmin' ); ?>
@@ -207,8 +187,6 @@ class Settings {
 				
 				if ( 'blocks' === $active_tab ) {
 					$this->render_blocks_tab();
-				} elseif ( 'templates' === $active_tab ) {
-					$this->render_templates_tab();
 				} elseif ( 'tools' === $active_tab ) {
 					$this->render_tools_tab();
 				} elseif ( 'white-label' === $active_tab ) {
@@ -460,36 +438,7 @@ class Settings {
 	/**
 	 * Render Templates Tab.
 	 */
-	private function render_templates_tab() {
-		if ( ! class_exists( 'ZenAdmin\\Templates' ) ) {
-			echo '<p>' . esc_html__( 'Templates module not found.', 'zenadmin' ) . '</p>';
-			return;
-		}
-		
-		$templates = \ZenAdmin\Templates::get_templates();
-		?>
-		<div class="zenadmin-card">
-			<h2><?php esc_html_e( 'Blocking Templates', 'zenadmin' ); ?></h2>
-			<p><?php esc_html_e( 'Apply pre-configured sets of rules to hide common annoyances.', 'zenadmin' ); ?></p>
-			
-			<div class="zenadmin-templates-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
-				<?php foreach ( $templates as $id => $template ) : ?>
-					<div class="zenadmin-template-card" style="border: 1px solid #ccd0d4; padding: 20px; background: #fff;">
-						<h3><?php echo esc_html( $template['name'] ); ?></h3>
-						<p><?php echo esc_html( $template['description'] ); ?></p>
-						<p><strong><?php esc_html_e( 'Selectors:', 'zenadmin' ); ?></strong> <?php echo count( $template['selectors'] ); ?></p>
-						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-							<?php wp_nonce_field( 'zenadmin_apply_template' ); ?>
-							<input type="hidden" name="action" value="zenadmin_apply_template">
-							<input type="hidden" name="template_id" value="<?php echo esc_attr( $id ); ?>">
-							<button type="submit" class="button button-primary"><?php esc_html_e( 'Apply Template', 'zenadmin' ); ?></button>
-						</form>
-					</div>
-				<?php endforeach; ?>
-			</div>
-		</div>
-		<?php
-	}
+
 
 	/**
 	 * Render Help Tab.
