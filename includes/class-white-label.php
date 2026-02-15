@@ -41,6 +41,7 @@ class White_Label {
 
 		// 4. Global Hard Blocking
 		add_action( 'admin_init', array( $this, 'enforce_global_hard_blocks' ) );
+		add_action( 'admin_menu', array( $this, 'hide_hard_blocked_menus' ), 999 );
 
 		// 5. Admin Color Scheme
 		add_action( 'admin_head', array( $this, 'inject_admin_colors' ) );
@@ -447,6 +448,64 @@ class White_Label {
 				wp_safe_redirect( $redirect_to );
 				exit;
 			}
+		}
+	}
+
+
+
+	/**
+	 * Hide Hard Blocked Menu Items.
+	 */
+	public function hide_hard_blocked_menus() {
+		// 1. Safety Checks
+		// - Admin Immunity: Never hide for Super Admins or fully capable admins
+		if ( current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$options = get_option( 'zenadmin_white_label', array() );
+		if ( empty( $options['enabled'] ) ) {
+			return;
+		}
+
+		// 2. Check Roles
+		$applied_roles = isset( $options['wl_applied_roles'] ) ? (array) $options['wl_applied_roles'] : array();
+		if ( empty( $applied_roles ) ) {
+			return; // No roles targeted
+		}
+
+		$user = wp_get_current_user();
+		$user_roles = (array) $user->roles;
+		
+		// Check intersection: if user has NONE of the applied roles, skip.
+		if ( ! array_intersect( $user_roles, $applied_roles ) ) {
+			return;
+		}
+
+		// 3. Hide Menus
+		$pages_raw = isset( $options['wl_hard_block_pages'] ) ? $options['wl_hard_block_pages'] : '';
+		if ( empty( $pages_raw ) ) {
+			return;
+		}
+
+		$blocked_pages = array_map( 'trim', explode( ',', $pages_raw ) );
+
+		foreach ( $blocked_pages as $page ) {
+			if ( empty( $page ) ) continue;
+			
+			// Remove top-level menu
+			remove_menu_page( $page );
+			
+			// Try to remove from common parents as submenu
+			remove_submenu_page( 'index.php', $page );
+			remove_submenu_page( 'tools.php', $page );
+			remove_submenu_page( 'options-general.php', $page );
+			remove_submenu_page( 'themes.php', $page );
+			remove_submenu_page( 'plugins.php', $page );
+			remove_submenu_page( 'users.php', $page );
+			
+			// Also attempt to remove using the page slug as parent
+			remove_submenu_page( $page, $page );
 		}
 	}
 
