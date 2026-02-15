@@ -181,6 +181,18 @@ class Settings {
 		?>
 		<div class="zenadmin-card">
 			<h2><?php esc_html_e( 'Currently Blocked Elements', 'zenadmin' ); ?></h2>
+			<?php 
+			// Display lock notice if settings are locked
+			if ( defined( 'ZENADMIN_LOCK_SETTINGS' ) && ZENADMIN_LOCK_SETTINGS ) :
+			?>
+				<div class="notice notice-warning inline">
+					<p>
+						<span class="dashicons dashicons-lock" style="vertical-align:middle;"></span>
+						<strong><?php esc_html_e( 'Settings Locked:', 'zenadmin' ); ?></strong>
+						<?php esc_html_e( 'Modifications are disabled. Contact your administrator to make changes.', 'zenadmin' ); ?>
+					</p>
+				</div>
+			<?php endif; ?>
 			<?php if ( empty( $blacklist ) ) : ?>
 				<p><?php esc_html_e( 'No elements blocked yet. Use the "Zen Mode" toggle in the admin bar to start cleaning up!', 'zenadmin' ); ?></p>
 			<?php else : ?>
@@ -216,6 +228,7 @@ class Settings {
 								</td>
 								<td><code style="font-size:11px;word-break:break-all;"><?php echo esc_html( $item['selector'] ); ?></code></td>
 								<td>
+									<?php if ( ! ( defined( 'ZENADMIN_LOCK_SETTINGS' ) && ZENADMIN_LOCK_SETTINGS ) ) : ?>
 									<a href="#" class="zenadmin-edit-roles-link" data-id="<?php echo esc_attr( $hash ); ?>">
 										<?php 
 										if ( $role_count === $total_roles ) {
@@ -227,9 +240,23 @@ class Settings {
 										?>
 										<span class="dashicons dashicons-edit" style="font-size:14px;vertical-align:middle;"></span>
 									</a>
+									<?php else : ?>
+										<?php 
+										if ( $role_count === $total_roles ) {
+											esc_html_e( 'All roles', 'zenadmin' );
+										} else {
+											/* translators: %d: number of roles */
+											printf( esc_html__( '%d roles', 'zenadmin' ), $role_count );
+										}
+										?>
+									<?php endif; ?>
 								</td>
 								<td>
-									<button class="button button-small button-link-delete zenadmin-delete-btn" data-id="<?php echo esc_attr( $hash ); ?>"><?php esc_html_e( 'Delete', 'zenadmin' ); ?></button>
+									<?php if ( ! ( defined( 'ZENADMIN_LOCK_SETTINGS' ) && ZENADMIN_LOCK_SETTINGS ) ) : ?>
+										<button class="button button-small button-link-delete zenadmin-delete-btn" data-id="<?php echo esc_attr( $hash ); ?>"><?php esc_html_e( 'Delete', 'zenadmin' ); ?></button>
+									<?php else : ?>
+										<span class="dashicons dashicons-lock" style="color:#999;" title="<?php esc_attr_e( 'Settings are locked', 'zenadmin' ); ?>"></span>
+									<?php endif; ?>
 								</td>
 								<td><?php echo esc_html( isset( $item['created_at'] ) ? wp_date( 'Y-m-d H:i:s', strtotime( $item['created_at'] ) ) : '-' ); ?></td>
 							</tr>

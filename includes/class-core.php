@@ -221,6 +221,11 @@ class Core {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'zenadmin' ) ) );
 		}
+		
+		// Check if settings are locked
+		if ( $this->is_settings_locked() ) {
+			wp_send_json_error( array( 'message' => __( 'Settings are locked. Modifications are disabled.', 'zenadmin' ) ) );
+		}
 
 		$selector = isset( $_POST['selector'] ) ? sanitize_text_field( wp_unslash( $_POST['selector'] ) ) : '';
 		$label    = isset( $_POST['label'] ) ? sanitize_text_field( wp_unslash( $_POST['label'] ) ) : '';
@@ -231,8 +236,8 @@ class Core {
 		if ( ! is_array( $hidden_for ) ) {
 			$hidden_for = array();
 		}
-		// Sanitize role slugs
-		$hidden_for = array_map( 'sanitize_key', $hidden_for );
+		// Validate role slugs (strict validation)
+		$hidden_for = $this->validate_roles( $hidden_for );
 
 		// Hard Block Fields
 		$target_url = isset( $_POST['target_url'] ) ? sanitize_text_field( wp_unslash( $_POST['target_url'] ) ) : '';
@@ -292,6 +297,11 @@ class Core {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'zenadmin' ) ) );
 		}
+		
+		// Check if settings are locked
+		if ( $this->is_settings_locked() ) {
+			wp_send_json_error( array( 'message' => __( 'Settings are locked. Modifications are disabled.', 'zenadmin' ) ) );
+		}
 
 		$hash      = isset( $_POST['id'] ) ? sanitize_text_field( wp_unslash( $_POST['id'] ) ) : '';
 		$blacklist = get_option( 'zenadmin_blacklist', array() );
@@ -314,6 +324,11 @@ class Core {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'zenadmin' ) ) );
 		}
+		
+		// Check if settings are locked
+		if ( $this->is_settings_locked() ) {
+			wp_send_json_error( array( 'message' => __( 'Settings are locked. Modifications are disabled.', 'zenadmin' ) ) );
+		}
 
 		$hash = isset( $_POST['id'] ) ? sanitize_text_field( wp_unslash( $_POST['id'] ) ) : '';
 		
@@ -323,7 +338,8 @@ class Core {
 		if ( ! is_array( $hidden_for ) ) {
 			$hidden_for = array();
 		}
-		$hidden_for = array_map( 'sanitize_key', $hidden_for );
+		// Validate role slugs (strict validation)
+		$hidden_for = $this->validate_roles( $hidden_for );
 
 		if ( empty( $hash ) ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid block ID', 'zenadmin' ) ) );
@@ -401,6 +417,8 @@ class Core {
 	 * Enforce Hard Blocking on restricted URLs.
 	 */
 	public function enforce_hard_blocks() {
+		global $pagenow;
+		
 		// 1. Safety & Exclusions
 		if ( wp_doing_ajax() || defined( 'DOING_AUTOSAVE' ) || $this->is_safe_mode() ) {
 			return;
@@ -409,18 +427,20 @@ class Core {
 		if ( ! is_admin() ) {
 			return;
 		}
-
-		$current_uri = $_SERVER['REQUEST_URI'];
 		
-		// Anti-Lockout Whitelist (Hardcoded)
-		// Prevent blocking ZenAdmin settings or Dashboard index
-		if ( strpos( $current_uri, 'page=zenadmin' ) !== false || 
-			 preg_match( '/wp-admin\/index\.php$/', $current_uri ) ||
-			 preg_match( '/wp-admin\/$/', $current_uri ) ) {
+		// 2. Hardcoded Whitelist (Anti-Lockout Protection)
+		// Prevent blocking ZenAdmin settings page
+		if ( isset( $_GET['page'] ) && 'zenadmin' === $_GET['page'] ) {
+			return;
+		}
+		
+		// Prevent blocking dashboard (unless explicitly configured via White Label)
+		// Note: Dashboard blocking should be handled separately in White Label module
+		if ( 'index.php' === $pagenow && ! $this->is_dashboard_blocked() ) {
 			return;
 		}
 
-		// 2. Get Rules
+		// 3. Get Rules
 		$blacklist = get_option( 'zenadmin_blacklist', array() );
 		if ( empty( $blacklist ) ) {
 			return;
@@ -429,7 +449,7 @@ class Core {
 		$user = wp_get_current_user();
 		$user_roles = (array) $user->roles;
 
-		// 3. Check for Hard Blocks
+		// 4. Check for Hard Blocks with Strict URL Matching
 		foreach ( $blacklist as $entry ) {
 			// Must be marked as Hard Block
 			if ( empty( $entry['hard_block'] ) || empty( $entry['target_url'] ) ) {
@@ -437,27 +457,102 @@ class Core {
 			}
 
 			// Check Role Visibility (if defined)
-			// Example: If blocked for 'editor', and user is 'editor', then Block.
-			// Logic matches frontend: if user_roles intersects with hidden_for, it is hidden.
+			// If user does NOT have a blocked role, skip this rule
 			if ( isset( $entry['hidden_for'] ) && is_array( $entry['hidden_for'] ) && ! empty( $entry['hidden_for'] ) ) {
 				if ( ! array_intersect( $user_roles, $entry['hidden_for'] ) ) {
-					// User does NOT have a blocked role -> Skip
 					continue;
 				}
 			}
 
-			// Match URL
-			// Decode HTML entities just in case
+			// 5. Strict URL Matching (Security Fix)
+			// Parse the target URL to extract file and query parameters
 			$blocked_url = html_entity_decode( $entry['target_url'] );
-
-			// Basic loose matching: if current URI contains the blocked relative path
-			// This covers: /wp-admin/options-general.php matches options-general.php
-			if ( strpos( $current_uri, $blocked_url ) !== false ) {
+			$parsed = parse_url( $blocked_url );
+			
+			// Extract the target file (e.g., "admin.php", "options-general.php")
+			$target_file = isset( $parsed['path'] ) ? basename( $parsed['path'] ) : '';
+			
+			// Compare with current page file
+			if ( $target_file !== $pagenow ) {
+				continue; // Different file, skip this rule
+			}
+			
+			// 6. Query Parameter Matching (if target URL has parameters)
+			if ( ! empty( $parsed['query'] ) ) {
+				parse_str( $parsed['query'], $target_params );
 				
-				// Block Access
-				wp_safe_redirect( admin_url( 'index.php?zenadmin_blocked=1' ) );
-				exit;
+				// All target parameters must match current request
+				$params_match = true;
+				foreach ( $target_params as $key => $value ) {
+					// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+					if ( ! isset( $_GET[ $key ] ) || $_GET[ $key ] !== $value ) {
+						$params_match = false;
+						break;
+					}
+				}
+				
+				// If parameters don't match exactly, skip this rule
+				if ( ! $params_match ) {
+					continue;
+				}
+			}
+			
+			// 7. BLOCK ACCESS
+			// All conditions met: file matches, parameters match (if any), role matches
+			wp_safe_redirect( admin_url( 'index.php?zenadmin_blocked=1' ) );
+			exit;
+		}
+	}
+	
+	/**
+	 * Check if dashboard blocking is enabled (placeholder for White Label module).
+	 *
+	 * @return bool
+	 */
+	private function is_dashboard_blocked() {
+		// This will be implemented in the White Label module
+		// For now, dashboard is never blocked via Hard Blocking
+		return false;
+	}
+	
+	/**
+	 * Validate and filter role slugs against WordPress registered roles.
+	 *
+	 * @param array $roles Array of role slugs to validate.
+	 * @return array Filtered array containing only valid role slugs.
+	 */
+	private function validate_roles( $roles ) {
+		if ( ! is_array( $roles ) ) {
+			return array();
+		}
+		
+		// Get WordPress roles object
+		if ( ! function_exists( 'wp_roles' ) ) {
+			require_once ABSPATH . 'wp-includes/pluggable.php';
+		}
+		
+		$wp_roles = wp_roles();
+		$valid_roles = array();
+		
+		foreach ( $roles as $role ) {
+			// Sanitize first
+			$role = sanitize_key( $role );
+			
+			// Validate against registered roles
+			if ( $wp_roles->is_role( $role ) ) {
+				$valid_roles[] = $role;
 			}
 		}
+		
+		return $valid_roles;
+	}
+	
+	/**
+	 * Check if settings are locked via ZENADMIN_LOCK_SETTINGS constant.
+	 *
+	 * @return bool True if settings are locked, false otherwise.
+	 */
+	private function is_settings_locked() {
+		return defined( 'ZENADMIN_LOCK_SETTINGS' ) && ZENADMIN_LOCK_SETTINGS;
 	}
 }
