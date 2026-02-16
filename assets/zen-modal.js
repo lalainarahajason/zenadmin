@@ -237,11 +237,6 @@
      * ZenAdmin Toast Notification System
      * Replaces native alert() with custom styled notifications
      */
-    /**
- * Toast notification system
- *
- * @param {string} toast - Toast type (success, error, warning, info).
- */
     const ZenToast = {
         container: null,
 
