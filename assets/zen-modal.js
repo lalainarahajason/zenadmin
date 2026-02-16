@@ -220,12 +220,20 @@
 		},
 
 		/**
-		 * Check if modal is open
+		 * Check if modal is open.
+		 *
+		 * @return {boolean} True if open.
 		 */
 		isOpen: function () {
 			return this.overlay && this.overlay.style.display === 'flex';
 		},
 
+		/**
+		 * Escape HTML to prevent XSS.
+		 *
+		 * @param {string} text - The text to escape.
+		 * @return {string} Escaped HTML.
+		 */
 		escapeHtml: function (text) {
 			const div = document.createElement('div');
 			div.textContent = text;
@@ -302,7 +310,9 @@
 		},
 
 		/**
-		 * Dismiss a toast
+		 * Dismiss a toast.
+		 *
+		 * @param {HTMLElement} toast - The toast element to dismiss.
 		 */
 		dismiss: function (toast) {
 			if (!toast || !toast.parentNode) return;
@@ -357,6 +367,12 @@
 			return this.show(message, 'info', duration);
 		},
 
+		/**
+		 * Escape HTML to prevent XSS.
+		 *
+		 * @param {string} text - The text to escape.
+		 * @return {string} Escaped HTML.
+		 */
 		escapeHtml: function (text) {
 			const div = document.createElement('div');
 			div.textContent = text;
