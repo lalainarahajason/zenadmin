@@ -10,15 +10,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: wordpress_test
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+    # NOTE : Le service mysql:8.0 a été supprimé. 
+    # wp-env installe et gère son propre conteneur MariaDB/MySQL.
 
     steps:
     - name: Checkout code
@@ -28,25 +21,27 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
+        cache: 'npm'
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.2'
+        php-version: '8.1' # Aligné avec votre composer.json
         tools: composer, cs2pr
         coverage: none
 
     - name: Install JS Dependencies
       run: npm install
 
+    # Sécurité : On ne push des fixes auto que sur les branches de travail
     - name: Auto-fix JS Linting Errors
+      if: github.ref != 'refs/heads/main'
       run: |
         npx eslint assets/ --fix || true
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git add -A
-        git diff --quiet && git diff --staged --quiet || git commit -m "style: auto-fix ESLint errors"
-        git push || true
+        git diff --quiet && git diff --staged --quiet || (git commit -m "style: auto-fix ESLint errors" && git push)
 
     - name: Lint JS
       run: npm run lint:js
@@ -60,14 +55,11 @@ jobs:
     - name: Run JS Tests
       run: npm run test:js
 
-    - name: Debug - List Vendor Directory
-      run: ls -la vendor/bin
-      
     - name: Start WordPress Environment (wp-env)
-      run: npm run env:start
-      
-    - name: Debug - Utils Container
-      run: npx wp-env run tests-cli ls -la
+      # wp-env start télécharge les images Docker de WP et de la DB.
+      run: npx wp-env start
       
     - name: Run PHP Tests (Integration via wp-env)
-      run: npm run test:php
+      # L'astuce : on exécute via composer pour que le binaire soit trouvé dans le vendor mappé.
+      # Si vendor/ n'est pas mappé, wp-env run réinstallera ou cherchera dans le path.
+      run: npx wp-env run tests-cli "composer run test"
