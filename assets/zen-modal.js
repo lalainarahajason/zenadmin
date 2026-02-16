@@ -1,8 +1,10 @@
 /**
  * ZenAdmin Modal
  * Handles the custom interaction dialog.
+ *
+ * @param {Window}   window   - The global window object.
+ * @param {Document} document - The document object.
  */
-
 (function (window, document) {
     'use strict';
 
@@ -57,7 +59,8 @@
          */
         open: function (config) {
             this.init();
-            this.lastFocusedElement = document.activeElement;
+            // Store currently focused element
+            this.lastFocusedElement = this.modal.ownerDocument.activeElement;
 
             // Build role checkboxes HTML
             let rolesHtml = '';
@@ -234,6 +237,11 @@
      * ZenAdmin Toast Notification System
      * Replaces native alert() with custom styled notifications
      */
+    /**
+ * Toast notification system
+ *
+ * @param {string} toast - Toast type (success, error, warning, info).
+ */
     const ZenToast = {
         container: null,
 

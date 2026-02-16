@@ -50,7 +50,7 @@
 			);
 			if (clearSessionBtn) {
 				clearSessionBtn
-					.querySelector( 'a' )
+					.querySelector('a')
 					.addEventListener('click', (e) => {
 						e.preventDefault();
 						sessionStorage.removeItem(
@@ -69,7 +69,7 @@
 			);
 			if (resetAllBtn) {
 				resetAllBtn
-					.querySelector( 'a' )
+					.querySelector('a')
 					.addEventListener('click', (e) => {
 						// eslint-disable-next-line no-alert
 						if (
@@ -103,8 +103,8 @@
 
 				// Allow clicking the toggle button itself
 				if (
-					e.target.closest( '#wp-admin-bar-zenadmin-toggle' ) ||
-					e.target.closest( '.zenadmin-modal-overlay' )
+					e.target.closest('#wp-admin-bar-zenadmin-toggle') ||
+					e.target.closest('.zenadmin-modal-overlay')
 				) {
 					return;
 				}
@@ -137,9 +137,9 @@
 			const target = e.target;
 
 			// Ignore admin bar, our overlay, and modal
-			if (target.closest( '#wpadminbar' ) ||
+			if (target.closest('#wpadminbar') ||
 				target.classList.contains('zenadmin-hover-overlay') ||
-				target.closest( '.zenadmin-modal-overlay' )) {
+				target.closest('.zenadmin-modal-overlay')) {
 				this.hideOverlay();
 				return;
 			}
@@ -167,7 +167,7 @@
 		},
 
 		handleClick(e) {
-			if ( !this.currentTarget ) {
+			if (!this.currentTarget) {
 				return;
 			}
 
@@ -200,15 +200,15 @@
 				let targetUrl = null;
 
 				// 1. Try finding link upwards (clicked on link text/icon)
-				let menuLink = this.currentTarget.closest( 'a' );
+				let menuLink = this.currentTarget.closest('a');
 
 				// 2. Try finding link downwards (clicked on LI padding)
 				if (!menuLink) {
-					menuLink = this.currentTarget.querySelector( 'a' );
+					menuLink = this.currentTarget.querySelector('a');
 				}
 
-				if (menuLink && menuLink.closest( '#adminmenu' )) {
-					const href = menuLink.getAttribute( 'href' );
+				if (menuLink && menuLink.closest('#adminmenu')) {
+					const href = menuLink.getAttribute('href');
 					if (href && href !== '#' && !href.startsWith('javascript:')) {
 						targetUrl = href;
 					}
@@ -230,6 +230,7 @@
 					onCancel: () => { }
 				});
 			} catch (err) {
+				// eslint-disable-next-line no-console
 				console.error('ZenAdmin Selection Error:', err);
 				ZenAdminToast.error('Error generating selector. Check console.');
 			}
@@ -240,17 +241,17 @@
 			if (el.tagName.toLowerCase() === 'body') return 'body';
 
 			// 0. Admin Menu Strategy: Surgical targeting to avoid hiding parent menus
-			const adminMenuLi = el.closest( '#adminmenu li' );
+			const adminMenuLi = el.closest('#adminmenu li');
 			if (adminMenuLi) {
 				// Check if we're inside a submenu (.wp-submenu)
-				const isInSubmenu = el.closest( '.wp-submenu' ) !== null;
+				const isInSubmenu = el.closest('.wp-submenu') !== null;
 
 				if (isInSubmenu) {
 					// SUBMENU ITEM: Target the specific <a> link, never the parent li
 					// This prevents hiding the entire parent menu when hiding a submenu item
-					const link = el.closest( 'a' );
+					const link = el.closest('a');
 					if (link) {
-						const hrefAttr = link.getAttribute( 'href' );
+						const hrefAttr = link.getAttribute('href');
 						if (hrefAttr && hrefAttr !== '#' && hrefAttr.length > 3) {
 							// Use a[href="..."] selector for submenu items
 							return `#adminmenu .wp-submenu a[href="${hrefAttr.replace(/"/g, '\\"')}"]`;
@@ -283,7 +284,7 @@
 			}
 
 			// 2. HREF Surgical Strategy (for links or inside links)
-			const link = el.closest( 'a' );
+			const link = el.closest('a');
 			if (link && link.href) {
 				const url = new URL(link.href);
 				const params = new URLSearchParams(url.search);
@@ -297,7 +298,7 @@
 				}
 				// Fallback to minimal href match if specific
 				// Avoid matching '#' or 'admin.php' generic
-				const hrefAttr = link.getAttribute( 'href' );
+				const hrefAttr = link.getAttribute('href');
 				if (hrefAttr && hrefAttr !== '#' && hrefAttr.length > 5) {
 					return `a[href="${hrefAttr.replace(/"/g, '\\"')}"]`;
 				}
@@ -396,8 +397,9 @@
 				// Use try-catch for matches as some selectors in whitelist might be complex or invalid if not careful
 				try {
 					return this.config.whitelist.some(w => el.matches(w));
-				} catch (e) {
-					console.error('Invalid whitelist selector check', e);
+				} catch (error) { // Renamed 'e' to 'error' to avoid eslint no-unused-vars
+					// eslint-disable-next-line no-console
+					console.error('Invalid whitelist selector check', error);
 					return false;
 				}
 			}
@@ -437,6 +439,7 @@
 				}
 			}).fail((err) => {
 				ZenAdminToast.error('Request failed. Check console.');
+				// eslint-disable-next-line no-console
 				console.error(err);
 			});
 		},
@@ -448,7 +451,7 @@
 		},
 
 		applySessionBlocks() {
-			if ( this.config.safeMode ) {
+			if (this.config.safeMode) {
 				return;
 			}
 
