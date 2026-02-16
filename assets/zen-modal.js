@@ -188,11 +188,11 @@
 
 				if (config.onConfirm) {
 					config.onConfirm({
-					    label: label,
-					    isSession: isSession,
-					    hiddenFor: hiddenFor,
-					    targetUrl: config.targetUrl, // Pass URL back
-					    isHardBlock: isHardBlock     // Pass Hard Block status
+						label: label,
+						isSession: isSession,
+						hiddenFor: hiddenFor,
+						targetUrl: config.targetUrl, // Pass URL back
+						isHardBlock: isHardBlock     // Pass Hard Block status
 					});
 				}
 				this.close();
@@ -252,12 +252,12 @@
 		},
 
 		/**
- * Show a toast notification
- *
- * @param {string} message  - The message to display.
- * @param {string} type     - Type: 'success', 'error', 'warning', 'info'.
- * @param {number} duration - Duration in ms (0 = manual close).
- */
+		 * Show a toast notification
+		 *
+		 * @param {string} message  - The message to display.
+		 * @param {string} type     - Type: 'success', 'error', 'warning', 'info'.
+		 * @param {number} duration - Duration in ms (0 = manual close).
+		 */
 		show: function (message, type = 'info', duration = 4000) {
 			this.init();
 

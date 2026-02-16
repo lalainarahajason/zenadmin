@@ -167,7 +167,7 @@
 			}
 		},
 
-		handleClick(e) {
+		handleClick() {
 			if (!this.currentTarget) {
 				return;
 			}
@@ -228,7 +228,7 @@
 					onConfirm: (data) => {
 						this.saveBlock(selector, data);
 					},
-					onCancel: () => {}
+					onCancel: () => { }
 				});
 			} catch (err) {
 				// eslint-disable-next-line no-console
