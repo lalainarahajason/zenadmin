@@ -73,6 +73,7 @@
 					.addEventListener('click', (e) => {
 						// eslint-disable-next-line no-alert
 						if (
+							// eslint-disable-next-line no-alert
 							!confirm(
 								'Warning: This will delete ALL blocked elements database and session.\n\nAre you sure completely reset ZenAdmin?'
 							)
