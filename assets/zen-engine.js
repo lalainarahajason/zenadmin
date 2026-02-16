@@ -1,5 +1,4 @@
-/* global ZenAdminToast, ZenAdminModal, jQuery, confirm, sessionStorage */
-
+/* global ZenAdminToast, ZenAdminModal */
 /**
  * ZenAdmin Engine
  * Handles the selection and blocking logic.
@@ -35,51 +34,78 @@
 
 		bindEvents() {
 			// Admin Bar Toggle
-			const toggleBtn = document.getElementById('wp-admin-bar-zenadmin-toggle');
+			const toggleBtn = document.getElementById(
+				'wp-admin-bar-zenadmin-toggle'
+			);
 			if (toggleBtn) {
-				toggleBtn.addEventListener( 'click', ( e) => {
+				toggleBtn.addEventListener('click', (e) => {
 					e.preventDefault();
 					this.toggleMode();
 				});
 			}
 
 			// Admin Bar: Clear Session
-			const clearSessionBtn = document.getElementById('wp-admin-bar-zenadmin-clear-session');
+			const clearSessionBtn = document.getElementById(
+				'wp-admin-bar-zenadmin-clear-session'
+			);
 			if (clearSessionBtn) {
-				clearSessionBtn.querySelector('a').addEventListener( 'click', ( e) => {
-					e.preventDefault();
-					sessionStorage.removeItem( 'zenadmin_session_blocks' );
-					ZenAdminToast.success('Session blocks cleared. Reloading...');
-					setTimeout(() => window.location.reload(), 1500);
-				});
+				clearSessionBtn
+					.querySelector( 'a' )
+					.addEventListener('click', (e) => {
+						e.preventDefault();
+						sessionStorage.removeItem(
+							'zenadmin_session_blocks'
+						);
+						ZenAdminToast.success(
+							'Session blocks cleared. Reloading...'
+						);
+						setTimeout(() => window.location.reload(), 1500);
+					});
 			}
 
 			// Admin Bar: Reset All
-			const resetAllBtn = document.getElementById('wp-admin-bar-zenadmin-reset-all');
+			const resetAllBtn = document.getElementById(
+				'wp-admin-bar-zenadmin-reset-all'
+			);
 			if (resetAllBtn) {
-				resetAllBtn.querySelector('a').addEventListener( 'click', ( e) => {
-					// eslint-disable-next-line no-alert
-					if (!confirm('Warning: This will delete ALL blocked elements database and session.\n\nAre you sure completely reset ZenAdmin?')) {
-						e.preventDefault();
-					} else {
-						sessionStorage.removeItem( 'zenadmin_session_blocks' );
-						// Let link navigation proceed
-					}
-				});
+				resetAllBtn
+					.querySelector( 'a' )
+					.addEventListener('click', (e) => {
+						// eslint-disable-next-line no-alert
+						if (
+							!confirm(
+								'Warning: This will delete ALL blocked elements database and session.\n\nAre you sure completely reset ZenAdmin?'
+							)
+						) {
+							e.preventDefault();
+						} else {
+							sessionStorage.removeItem(
+								'zenadmin_session_blocks'
+							);
+							// Let link navigation proceed
+						}
+					});
 			}
 
 			// Document Hover
-			document.addEventListener( 'mouseover', ( e) => {
-				if (!this.isActive) return;
+			document.addEventListener('mouseover', (e) => {
+				if (!this.isActive) {
+					return;
+				}
 				this.handleHover(e);
 			}, true);
 
 			// Document Click
-			document.addEventListener( 'click', ( e) => {
-				if (!this.isActive) return;
+			document.addEventListener('click', (e) => {
+				if (!this.isActive) {
+					return;
+				}
 
 				// Allow clicking the toggle button itself
-				if (e.target.closest('#wp-admin-bar-zenadmin-toggle') || e.target.closest('.zenadmin-modal-overlay')) {
+				if (
+					e.target.closest( '#wp-admin-bar-zenadmin-toggle' ) ||
+					e.target.closest( '.zenadmin-modal-overlay' )
+				) {
 					return;
 				}
 
@@ -89,7 +115,7 @@
 			}, true);
 
 			// Escape to exit mode
-			document.addEventListener( 'keydown', ( e) => {
+			document.addEventListener('keydown', (e) => {
 				if (e.key === 'Escape' && this.isActive) {
 					this.toggleMode(false);
 				}
@@ -111,9 +137,9 @@
 			const target = e.target;
 
 			// Ignore admin bar, our overlay, and modal
-			if (target.closest('#wpadminbar') ||
+			if (target.closest( '#wpadminbar' ) ||
 				target.classList.contains('zenadmin-hover-overlay') ||
-				target.closest('.zenadmin-modal-overlay')) {
+				target.closest( '.zenadmin-modal-overlay' )) {
 				this.hideOverlay();
 				return;
 			}
@@ -141,7 +167,9 @@
 		},
 
 		handleClick(e) {
-			if (!this.currentTarget) return;
+			if ( !this.currentTarget ) {
+				return;
+			}
 
 			try {
 				const selector = this.generateSelector(this.currentTarget);
@@ -172,15 +200,15 @@
 				let targetUrl = null;
 
 				// 1. Try finding link upwards (clicked on link text/icon)
-				let menuLink = this.currentTarget.closest('a');
+				let menuLink = this.currentTarget.closest( 'a' );
 
 				// 2. Try finding link downwards (clicked on LI padding)
 				if (!menuLink) {
-					menuLink = this.currentTarget.querySelector('a');
+					menuLink = this.currentTarget.querySelector( 'a' );
 				}
 
-				if (menuLink && menuLink.closest('#adminmenu')) {
-					const href = menuLink.getAttribute('href');
+				if (menuLink && menuLink.closest( '#adminmenu' )) {
+					const href = menuLink.getAttribute( 'href' );
 					if (href && href !== '#' && !href.startsWith('javascript:')) {
 						targetUrl = href;
 					}
@@ -212,17 +240,17 @@
 			if (el.tagName.toLowerCase() === 'body') return 'body';
 
 			// 0. Admin Menu Strategy: Surgical targeting to avoid hiding parent menus
-			const adminMenuLi = el.closest('#adminmenu li');
+			const adminMenuLi = el.closest( '#adminmenu li' );
 			if (adminMenuLi) {
 				// Check if we're inside a submenu (.wp-submenu)
-				const isInSubmenu = el.closest('.wp-submenu') !== null;
+				const isInSubmenu = el.closest( '.wp-submenu' ) !== null;
 
 				if (isInSubmenu) {
 					// SUBMENU ITEM: Target the specific <a> link, never the parent li
 					// This prevents hiding the entire parent menu when hiding a submenu item
-					const link = el.closest('a');
+					const link = el.closest( 'a' );
 					if (link) {
-						const hrefAttr = link.getAttribute('href');
+						const hrefAttr = link.getAttribute( 'href' );
 						if (hrefAttr && hrefAttr !== '#' && hrefAttr.length > 3) {
 							// Use a[href="..."] selector for submenu items
 							return `#adminmenu .wp-submenu a[href="${hrefAttr.replace(/"/g, '\\"')}"]`;
@@ -255,7 +283,7 @@
 			}
 
 			// 2. HREF Surgical Strategy (for links or inside links)
-			const link = el.closest('a');
+			const link = el.closest( 'a' );
 			if (link && link.href) {
 				const url = new URL(link.href);
 				const params = new URLSearchParams(url.search);
@@ -269,7 +297,7 @@
 				}
 				// Fallback to minimal href match if specific
 				// Avoid matching '#' or 'admin.php' generic
-				const hrefAttr = link.getAttribute('href');
+				const hrefAttr = link.getAttribute( 'href' );
 				if (hrefAttr && hrefAttr !== '#' && hrefAttr.length > 5) {
 					return `a[href="${hrefAttr.replace(/"/g, '\\"')}"]`;
 				}
@@ -414,15 +442,17 @@
 		},
 
 		saveSessionBlock(selector) {
-			let blocks = JSON.parse(sessionStorage.getItem( 'zenadmin_session_blocks' ) || '[]');
+			let blocks = JSON.parse(sessionStorage.getItem('zenadmin_session_blocks') || '[]');
 			blocks.push(selector);
-			sessionStorage.setItem( 'zenadmin_session_blocks', JSON.stringify(blocks));
+			sessionStorage.setItem('zenadmin_session_blocks', JSON.stringify(blocks));
 		},
 
 		applySessionBlocks() {
-			if (this.config.safeMode) return;
+			if ( this.config.safeMode ) {
+				return;
+			}
 
-			const blocks = JSON.parse(sessionStorage.getItem( 'zenadmin_session_blocks' ) || '[]');
+			const blocks = JSON.parse(sessionStorage.getItem('zenadmin_session_blocks') || '[]');
 			if (blocks.length > 0) {
 				const style = document.createElement('style');
 				style.innerHTML = blocks.join(', ') + ' { display: none !important; }';
