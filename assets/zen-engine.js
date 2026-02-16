@@ -1,8 +1,11 @@
 /**
  * ZenAdmin Engine
  * Handles the selection and blocking logic.
+ *
+ * @param {Window}   window   - The global window object.
+ * @param {Document} document - The document object.
+ * @param {Object}   $        - jQuery object.
  */
-
 (function (window, document, $) {
     'use strict';
 
