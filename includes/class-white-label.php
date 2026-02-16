@@ -84,18 +84,18 @@ class White_Label {
 			// Rebrand Name
 			// Prioritize wl_plugin_name, fallback to agency_name for backward compat
 			$new_name = ! empty( $options['wl_plugin_name'] ) ? $options['wl_plugin_name'] : ( ! empty( $options['agency_name'] ) ? $options['agency_name'] . ' (System)' : '' );
-			
+
 			if ( $new_name ) {
 				$all_plugins[ $plugin_key ]['Name']   = $new_name;
 				$all_plugins[ $plugin_key ]['Title']  = $new_name; // Some contexts use Title
 				$all_plugins[ $plugin_key ]['Author'] = ! empty( $options['agency_name'] ) ? $options['agency_name'] : 'System';
 			}
-			
+
 			if ( ! empty( $options['agency_url'] ) ) {
 				$all_plugins[ $plugin_key ]['PluginURI'] = $options['agency_url'];
 				$all_plugins[ $plugin_key ]['AuthorURI'] = $options['agency_url'];
 			}
-			
+
 			// Rebrand Description
 			if ( ! empty( $options['wl_plugin_desc'] ) ) {
 				$all_plugins[ $plugin_key ]['Description'] = esc_html( $options['wl_plugin_desc'] );
@@ -131,7 +131,7 @@ class White_Label {
 	public function rename_menu_items() {
 		global $submenu;
 		$options = get_option( 'zenadmin_white_label', array() );
-		
+
 		if ( empty( $options['enabled'] ) ) {
 			return;
 		}
@@ -178,7 +178,7 @@ class White_Label {
 		// Wait, settings field naming: 'login_logo' is the IMAGE URL. 'wl_login_logo_url' is the LINK URL.
 		if ( ! empty( $options['login_logo'] ) ) {
 			$logo_url = esc_url( $options['login_logo'] );
-			$css .= "
+			$css     .= "
 				body.login div#login h1 a {
 					background-image: url('{$logo_url}');
 					background-size: contain;
@@ -288,7 +288,7 @@ class White_Label {
 	public function clean_admin_bar() {
 		global $wp_admin_bar;
 		$options = get_option( 'zenadmin_white_label', array() );
-		
+
 		if ( empty( $options['enabled'] ) ) {
 			return;
 		}
@@ -296,7 +296,7 @@ class White_Label {
 		// Rebrand ZenAdmin Node
 		// Name priority: wl_plugin_name > agency_name
 		$name = ! empty( $options['wl_plugin_name'] ) ? $options['wl_plugin_name'] : ( ! empty( $options['agency_name'] ) ? $options['agency_name'] : '' );
-		
+
 		if ( $name ) {
 			$node = $wp_admin_bar->get_node( 'zenadmin-parent' );
 			if ( $node ) {
@@ -305,7 +305,7 @@ class White_Label {
 				if ( ! empty( $options['wl_menu_icon'] ) && strpos( $options['wl_menu_icon'], 'dashicons-' ) === 0 ) {
 					$icon = '<span class="ab-icon dashicons ' . esc_attr( $options['wl_menu_icon'] ) . '"></span> ';
 				}
-				
+
 				$node->title = $icon . esc_html( $name );
 				$wp_admin_bar->add_node( $node );
 			}
@@ -371,7 +371,7 @@ class White_Label {
 				array( $this, 'render_welcome_widget' )
 			);
 		}
-		
+
 		// Always remove default welcome panel if we are customizing dashboard
 		if ( ! empty( $options['wl_dashboard_reset'] ) ) {
 			remove_action( 'welcome_panel', 'wp_welcome_panel' );
@@ -417,9 +417,9 @@ class White_Label {
 			return; // No roles targeted
 		}
 
-		$user = wp_get_current_user();
+		$user       = wp_get_current_user();
 		$user_roles = (array) $user->roles;
-		
+
 		// Check intersection: if user has NONE of the applied roles, skip.
 		if ( ! array_intersect( $user_roles, $applied_roles ) ) {
 			return;
@@ -435,16 +435,18 @@ class White_Label {
 		$current_uri   = $_SERVER['REQUEST_URI']; // e.g. /wp-admin/tools.php?page=x
 
 		foreach ( $blocked_pages as $page ) {
-			if ( empty( $page ) ) continue;
+			if ( empty( $page ) ) {
+				continue;
+			}
 
 			// Simple strpos check for the page slug/filename in the URI
 			// This covers 'tools.php' in '/wp-admin/tools.php'
 			// And 'options-general.php' in '/wp-admin/options-general.php'
 			if ( false !== strpos( $current_uri, $page ) ) {
-				
+
 				// BLOCK DETECTED
 				$redirect_to = ! empty( $options['wl_redirect_dest'] ) ? $options['wl_redirect_dest'] : admin_url();
-				
+
 				wp_safe_redirect( $redirect_to );
 				exit;
 			}
@@ -474,9 +476,9 @@ class White_Label {
 			return; // No roles targeted
 		}
 
-		$user = wp_get_current_user();
+		$user       = wp_get_current_user();
 		$user_roles = (array) $user->roles;
-		
+
 		// Check intersection: if user has NONE of the applied roles, skip.
 		if ( ! array_intersect( $user_roles, $applied_roles ) ) {
 			return;
@@ -491,11 +493,13 @@ class White_Label {
 		$blocked_pages = array_map( 'trim', explode( ',', $pages_raw ) );
 
 		foreach ( $blocked_pages as $page ) {
-			if ( empty( $page ) ) continue;
-			
+			if ( empty( $page ) ) {
+				continue;
+			}
+
 			// Remove top-level menu
 			remove_menu_page( $page );
-			
+
 			// Try to remove from common parents as submenu
 			remove_submenu_page( 'index.php', $page );
 			remove_submenu_page( 'tools.php', $page );
@@ -503,7 +507,7 @@ class White_Label {
 			remove_submenu_page( 'themes.php', $page );
 			remove_submenu_page( 'plugins.php', $page );
 			remove_submenu_page( 'users.php', $page );
-			
+
 			// Also attempt to remove using the page slug as parent
 			remove_submenu_page( $page, $page );
 		}
@@ -532,7 +536,7 @@ class White_Label {
 		// 1. Sidebar Background & Text Contrast
 		// Default to dark sidebar (white text) if no custom bg is set
 		$text_color = '#fff';
-		
+
 		if ( $sidebar_bg ) {
 			$css .= "
 				#adminmenuback, #adminmenuwrap, #adminmenu, #adminmenu .wp-submenu {
@@ -541,15 +545,15 @@ class White_Label {
 			";
 
 			// Smart Contrast for Sidebar Text
-			$luminance = $this->get_luminance( $sidebar_bg );
+			$luminance  = $this->get_luminance( $sidebar_bg );
 			$text_color = ( $luminance > 0.5 ) ? '#1d2327' : '#fff';
 		}
 
-		// Apply Sidebar Text Color (globally or just when custom BG is set? 
-		// If custom BG is set, we MUST apply it. 
-		// If not, we can still force it if we want to ensure consistency with the active item logic below, 
+		// Apply Sidebar Text Color (globally or just when custom BG is set?
+		// If custom BG is set, we MUST apply it.
+		// If not, we can still force it if we want to ensure consistency with the active item logic below,
 		// but standard WP is fine. Let's apply it if $sidebar_bg is set OR if we need to force white for active items).
-		
+
 		if ( $sidebar_bg ) {
 			$css .= "
 				#adminmenu a {
@@ -563,7 +567,7 @@ class White_Label {
 				}
 			";
 		}
-		
+
 		// 1.5 Admin Bar Background
 		if ( $admin_bar ) {
 			$css .= "
@@ -571,12 +575,12 @@ class White_Label {
 					background-color: {$admin_bar} !important;
 				}
 			";
-			
+
 			// Smart Contrast for Admin Bar
-			$ab_luminance = $this->get_luminance( $admin_bar );
+			$ab_luminance  = $this->get_luminance( $admin_bar );
 			$ab_text_color = ( $ab_luminance > 0.5 ) ? '#1d2327' : '#fff';
 			$ab_icon_color = ( $ab_luminance > 0.5 ) ? '#1d2327' : '#a7aaad'; // Standard grey for icons on dark, dark on light
-			
+
 			$css .= "
 				#wpadminbar .ab-item, 
 				#wpadminbar a.ab-item, 
@@ -666,20 +670,20 @@ class White_Label {
 	 */
 	private function get_luminance( $hex ) {
 		$hex = str_replace( '#', '', $hex );
-		
+
 		// Map simple names to hex if needed, but wp-color-picker usually returns hex
 		if ( 3 === strlen( $hex ) ) {
 			$hex = str_repeat( substr( $hex, 0, 1 ), 2 ) . str_repeat( substr( $hex, 1, 1 ), 2 ) . str_repeat( substr( $hex, 2, 1 ), 2 );
 		}
-		
+
 		$r = hexdec( substr( $hex, 0, 2 ) ) / 255;
 		$g = hexdec( substr( $hex, 2, 2 ) ) / 255;
 		$b = hexdec( substr( $hex, 4, 2 ) ) / 255;
-		
+
 		$r = ( $r <= 0.03928 ) ? $r / 12.92 : pow( ( $r + 0.055 ) / 1.055, 2.4 );
 		$g = ( $g <= 0.03928 ) ? $g / 12.92 : pow( ( $g + 0.055 ) / 1.055, 2.4 );
 		$b = ( $b <= 0.03928 ) ? $b / 12.92 : pow( ( $b + 0.055 ) / 1.055, 2.4 );
-		
+
 		return 0.2126 * $r + 0.7152 * $g + 0.0722 * $b;
 	}
 }

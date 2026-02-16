@@ -131,8 +131,8 @@ class Settings {
 	public function render_page() {
 		// Tab navigation with whitelist validation
 		$allowed_tabs = array( 'blocks', 'tools', 'white-label', 'help', 'documentation' );
-		$active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'blocks';
-		
+		$active_tab   = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'blocks';
+
 		// Validate against whitelist
 		if ( ! in_array( $active_tab, $allowed_tabs, true ) ) {
 			$active_tab = 'blocks';
@@ -184,7 +184,7 @@ class Settings {
 			<div class="zenadmin-content">
 				<?php
 				settings_errors( 'zenadmin_messages' );
-				
+
 				if ( 'blocks' === $active_tab ) {
 					$this->render_blocks_tab();
 				} elseif ( 'tools' === $active_tab ) {
@@ -207,21 +207,21 @@ class Settings {
 	 */
 	private function render_blocks_tab() {
 		$blacklist = get_option( 'zenadmin_blacklist', array() );
-		
+
 		// Ensure $blacklist is always an array
 		if ( ! is_array( $blacklist ) ) {
 			$blacklist = array();
 		}
-		
+
 		global $wp_roles;
 		$all_roles = wp_list_pluck( $wp_roles->roles, 'name' );
 		?>
 		<div class="zenadmin-card">
 			<h2><?php esc_html_e( 'Currently Blocked Elements', 'zenadmin' ); ?></h2>
-			<?php 
+			<?php
 			// Display lock notice if settings are locked
 			if ( defined( 'ZENADMIN_LOCK_SETTINGS' ) && ZENADMIN_LOCK_SETTINGS ) :
-			?>
+				?>
 				<div class="notice notice-warning inline">
 					<p>
 						<span class="dashicons dashicons-lock" style="vertical-align:middle;"></span>
@@ -244,16 +244,17 @@ class Settings {
 						</tr>
 					</thead>
 					<tbody>
-						<?php foreach ( $blacklist as $hash => $item ) : 
+						<?php
+						foreach ( $blacklist as $hash => $item ) :
 							// Skip invalid items
 							if ( ! is_array( $item ) || ! isset( $item['selector'] ) || ! isset( $item['label'] ) ) {
 								continue;
 							}
-							
-							$hidden_for = isset( $item['hidden_for'] ) ? (array) $item['hidden_for'] : array_keys( $all_roles );
-							$role_count = count( $hidden_for );
+
+							$hidden_for  = isset( $item['hidden_for'] ) ? (array) $item['hidden_for'] : array_keys( $all_roles );
+							$role_count  = count( $hidden_for );
 							$total_roles = count( $all_roles );
-						?>
+							?>
 							<tr data-id="<?php echo esc_attr( $hash ); ?>" data-roles="<?php echo esc_attr( wp_json_encode( $hidden_for ) ); ?>">
 								<td>
 									<?php echo esc_html( $item['label'] ); ?>
@@ -267,7 +268,7 @@ class Settings {
 								<td>
 									<?php if ( ! ( defined( 'ZENADMIN_LOCK_SETTINGS' ) && ZENADMIN_LOCK_SETTINGS ) ) : ?>
 									<a href="#" class="zenadmin-edit-roles-link" data-id="<?php echo esc_attr( $hash ); ?>">
-										<?php 
+										<?php
 										if ( $role_count === $total_roles ) {
 											esc_html_e( 'All roles', 'zenadmin' );
 										} else {
@@ -278,7 +279,7 @@ class Settings {
 										<span class="dashicons dashicons-edit" style="font-size:14px;vertical-align:middle;"></span>
 									</a>
 									<?php else : ?>
-										<?php 
+										<?php
 										if ( $role_count === $total_roles ) {
 											esc_html_e( 'All roles', 'zenadmin' );
 										} else {
@@ -770,10 +771,12 @@ class Settings {
 						<td>
 							<?php
 							global $wp_roles;
-							$roles = $wp_roles->roles;
+							$roles         = $wp_roles->roles;
 							$applied_roles = isset( $options['wl_applied_roles'] ) ? (array) $options['wl_applied_roles'] : array();
 							foreach ( $roles as $slug => $data ) {
-								if ( 'administrator' === $slug ) continue; // Skip admin
+								if ( 'administrator' === $slug ) {
+									continue; // Skip admin
+								}
 								?>
 								<label style="display:inline-block; margin-right:15px;">
 									<input type="checkbox" name="zenadmin_white_label[wl_applied_roles][]" value="<?php echo esc_attr( $slug ); ?>" <?php checked( in_array( $slug, $applied_roles ) ); ?>>
@@ -801,7 +804,7 @@ class Settings {
 		if ( isset( $white_label_options['enabled'] ) && $white_label_options['enabled'] ) {
 			$white_label_enabled = true;
 		}
-		
+
 		// Inline Styles for Documentation Layout
 		?>
 		<style>

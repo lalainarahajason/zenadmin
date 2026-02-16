@@ -101,7 +101,7 @@ class ZenAdmin_Portability {
 
 		// 4. Send Download Headers
 		$filename = 'zenadmin-config-' . date( 'Y-m-d-H-i-s' ) . '.json';
-		
+
 		header( 'Content-Type: application/json; charset=utf-8' );
 		header( 'Content-Disposition: attachment; filename=' . $filename );
 		header( 'Pragma: no-cache' );
@@ -133,7 +133,7 @@ class ZenAdmin_Portability {
 			// Sanitize
 			$label    = sanitize_text_field( $item['label'] );
 			$selector = sanitize_text_field( $item['selector'] ); // We need stricter CSS validation here ideally
-			
+
 			// Recalculate hash to ensure integrity
 			$new_hash = md5( $selector );
 

@@ -8,7 +8,8 @@
         "lucatume/wp-browser": "^3.0",
         "wp-coding-standards/wpcs": "^3.0",
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
-        "mockery/mockery": "^1.6"
+        "mockery/mockery": "^1.6",
+        "squizlabs/php_codesniffer": "*"
     },
     "scripts": {
         "test": "phpunit",
