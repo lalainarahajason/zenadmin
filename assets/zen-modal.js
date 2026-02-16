@@ -246,26 +246,32 @@
         init: function () {
             if (this.container) return;
 
+            this.container = document.createElement('div');
+            this.container.className = 'zenadmin-toast-container';
+            document.body.appendChild(this.container);
+        },
+
+        /**
          * Show a toast notification
-                *
-         * @param { string } message - The message to display.
-         * @param { string } type - Type: 'success', 'error', 'warning', 'info'.
-         * @param { number } duration - Duration in ms(0 = manual close).
+         *
+         * @param {string} message  - The message to display.
+         * @param {string} type     - Type: 'success', 'error', 'warning', 'info'.
+         * @param {number} duration - Duration in ms (0 = manual close).
          */
-            show: function (message, type = 'info', duration = 4000) {
-                this.init();
+        show: function (message, type = 'info', duration = 4000) {
+            this.init();
 
-                const toast = document.createElement('div');
-                toast.className = `zenadmin-toast zenadmin-toast-${type}`;
+            const toast = document.createElement('div');
+            toast.className = `zenadmin-toast zenadmin-toast-${type}`;
 
-                const icons = {
-                    success: 'yes-alt',
-                    error: 'dismiss',
-                    warning: 'warning',
-                    info: 'info'
-                };
+            const icons = {
+                success: 'yes-alt',
+                error: 'dismiss',
+                warning: 'warning',
+                info: 'info'
+            };
 
-                toast.innerHTML = `
+            toast.innerHTML = `
                 <span class="dashicons dashicons-${icons[type] || 'info'}"></span>
                 <span class="zenadmin-toast-message">${this.escapeHtml(message)}</span>
                 <button class="zenadmin-toast-close" aria-label="Close">
@@ -273,72 +279,72 @@
                 </button>
             `;
 
-                // Close button handler
-                toast.querySelector('.zenadmin-toast-close').addEventListener('click', () => {
-                    this.dismiss(toast);
-                });
+            // Close button handler
+            toast.querySelector('.zenadmin-toast-close').addEventListener('click', () => {
+                this.dismiss(toast);
+            });
 
-                this.container.appendChild(toast);
+            this.container.appendChild(toast);
 
-                // Animate in
-                requestAnimationFrame(() => {
-                    toast.classList.add('zenadmin-toast-visible');
-                });
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.classList.add('zenadmin-toast-visible');
+            });
 
-                // Auto dismiss
-                if (duration > 0) {
-                    setTimeout(() => {
-                        this.dismiss(toast);
-                    }, duration);
-                }
-
-                return toast;
-            },
-
-            /**
-             * Dismiss a toast
-             */
-            dismiss: function (toast) {
-                if (!toast || !toast.parentNode) return;
-
-                toast.classList.remove('zenadmin-toast-visible');
-                toast.classList.add('zenadmin-toast-hiding');
-
+            // Auto dismiss
+            if (duration > 0) {
                 setTimeout(() => {
-                    if (toast.parentNode) {
-                        toast.parentNode.removeChild(toast);
-                    }
-                }, 300);
-            },
-
-            /**
-             * Shorthand methods
-             */
-            success: function (message, duration) {
-                return this.show(message, 'success', duration);
-            },
-
-            error: function (message, duration) {
-                return this.show(message, 'error', duration || 6000);
-            },
-
-            warning: function (message, duration) {
-                return this.show(message, 'warning', duration || 5000);
-            },
-
-            info: function (message, duration) {
-                return this.show(message, 'info', duration);
-            },
-
-            escapeHtml: function (text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
+                    this.dismiss(toast);
+                }, duration);
             }
-        };
 
-        // Expose Globals
-        window.ZenAdminModal = ZenModal;
-        window.ZenAdminToast = ZenToast;
+            return toast;
+        },
 
-    })(window, document);
+        /**
+         * Dismiss a toast
+         */
+        dismiss: function (toast) {
+            if (!toast || !toast.parentNode) return;
+
+            toast.classList.remove('zenadmin-toast-visible');
+            toast.classList.add('zenadmin-toast-hiding');
+
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        },
+
+        /**
+         * Shorthand methods
+         */
+        success: function (message, duration) {
+            return this.show(message, 'success', duration);
+        },
+
+        error: function (message, duration) {
+            return this.show(message, 'error', duration || 6000);
+        },
+
+        warning: function (message, duration) {
+            return this.show(message, 'warning', duration || 5000);
+        },
+
+        info: function (message, duration) {
+            return this.show(message, 'info', duration);
+        },
+
+        escapeHtml: function (text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    };
+
+    // Expose Globals
+    window.ZenAdminModal = ZenModal;
+    window.ZenAdminToast = ZenToast;
+
+})(window, document);
