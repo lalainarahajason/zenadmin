@@ -779,7 +779,7 @@ class Settings {
 								}
 								?>
 								<label style="display:inline-block; margin-right:15px;">
-									<input type="checkbox" name="zenadmin_white_label[wl_applied_roles][]" value="<?php echo esc_attr( $slug ); ?>" <?php checked( in_array( $slug, $applied_roles ) ); ?>>
+									<input type="checkbox" name="zenadmin_white_label[wl_applied_roles][]" value="<?php echo esc_attr( $slug ); ?>" <?php checked( in_array( $slug, $applied_roles, true ) ); ?>>
 									<?php echo esc_html( $data['name'] ); ?>
 								</label>
 								<?php

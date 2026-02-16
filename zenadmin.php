@@ -23,18 +23,23 @@ if ( ! defined( 'ZENADMIN_DEBUG' ) ) {
 	define( 'ZENADMIN_DEBUG', false );
 }
 
+// Define main file for hooks
+if ( ! defined( 'ZENADMIN_FILE' ) ) {
+	define( 'ZENADMIN_FILE', __FILE__ );
+}
+
 // Autoloader (Primitive but effective since we have a fixed structure)
 spl_autoload_register(
-	function ( $class ) {
+	function ( $class_name ) {
 		$prefix   = 'ZenAdmin\\';
 		$base_dir = ZENADMIN_PATH . 'includes/';
 
 		$len = strlen( $prefix );
-		if ( strncmp( $prefix, $class, $len ) !== 0 ) {
+		if ( strncmp( $prefix, $class_name, $len ) !== 0 ) {
 			return;
 		}
 
-		$relative_class = substr( $class, $len );
+		$relative_class = substr( $class_name, $len );
 		// Replace namespace separators with hyphens, and underscores with hyphens
 		$file = $base_dir . 'class-' . strtolower( str_replace( array( '\\', '_' ), '-', $relative_class ) ) . '.php';
 
@@ -44,117 +49,8 @@ spl_autoload_register(
 	}
 );
 
-/**
- * Main Plugin Class
- *
- * @since 1.0.0
- */
-final class ZenAdmin {
-
-	/**
-	 * Instance of this class.
-	 *
-	 * @var object
-	 */
-	private static $instance;
-
-	/**
-	 * Get the instance of the class.
-	 *
-	 * @return object
-	 */
-	public static function get_instance() {
-		if ( ! isset( self::$instance ) && ! ( self::$instance instanceof ZenAdmin ) ) {
-			self::$instance = new ZenAdmin();
-			self::$instance->setup_constants();
-			self::$instance->includes();
-			self::$instance->hooks();
-		}
-		return self::$instance;
-	}
-
-	/**
-	 * Setup plugin constants.
-	 */
-	private function setup_constants() {
-		// Already defined globally for simplicity in templates
-	}
-
-	/**
-	 * Include required files.
-	 */
-	private function includes() {
-		// Autoload handled by SPL
-	}
-
-	/**
-	 * Setup hooks.
-	 */
-	private function hooks() {
-		add_action( 'plugins_loaded', array( $this, 'init' ) );
-		register_activation_hook( __FILE__, array( $this, 'activate' ) );
-		register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
-		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
-	}
-
-	/**
-	 * Initialize the plugin.
-	 */
-	public function init() {
-		// Load text domain
-		load_plugin_textdomain( 'zenadmin', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
-
-		// Initialize Core Logic
-		if ( class_exists( 'ZenAdmin\\Core' ) ) {
-			new \ZenAdmin\Core();
-		}
-
-		// Initialize Settings
-		if ( is_admin() && class_exists( 'ZenAdmin\\Settings' ) ) {
-			new \ZenAdmin\Settings();
-		}
-
-		// Initialize White Label (Pro)
-		if ( class_exists( 'ZenAdmin\\White_Label' ) ) {
-			$white_label = new \ZenAdmin\White_Label();
-			$white_label->init();
-		}
-	}
-
-	/**
-	 * Activation hook.
-	 */
-	public function activate() {
-		// Set default options if not exists
-		if ( false === get_option( 'zenadmin_blacklist' ) ) {
-			add_option( 'zenadmin_blacklist', array() );
-		}
-
-		// Schema version
-		if ( false === get_option( 'zenadmin_schema_version' ) ) {
-			add_option( 'zenadmin_schema_version', '1.0.0' );
-		}
-	}
-
-	/**
-	 * Deactivation hook.
-	 */
-	public function deactivate() {
-		// Flush rewrite rules if needed, or cleanup temporary data
-	}
-
-	/**
-	 * Add specific links to the plugin action links.
-	 *
-	 * @param array $links Plugin action links.
-	 * @return array Modified links.
-	 */
-	public function plugin_action_links( $links ) {
-		$settings_link = '<a href="' . admin_url( 'options-general.php?page=zenadmin' ) . '">' . __( 'Settings', 'zenadmin' ) . '</a>';
-		array_unshift( $links, $settings_link );
-		return $links;
-	}
-}
+// Require Main Class
+require_once ZENADMIN_PATH . 'includes/class-zenadmin.php';
 
 /**
  * Returns the main instance of ZenAdmin.

@@ -100,7 +100,7 @@ class ZenAdmin_Portability {
 		);
 
 		// 4. Send Download Headers
-		$filename = 'zenadmin-config-' . date( 'Y-m-d-H-i-s' ) . '.json';
+		$filename = 'zenadmin-config-' . gmdate( 'Y-m-d-H-i-s' ) . '.json';
 
 		header( 'Content-Type: application/json; charset=utf-8' );
 		header( 'Content-Disposition: attachment; filename=' . $filename );

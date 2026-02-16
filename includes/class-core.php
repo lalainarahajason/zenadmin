@@ -26,7 +26,7 @@ class Core {
 		}
 
 		// Portability Engine (Import/Export)
-		require_once plugin_dir_path( __FILE__ ) . 'class-portability.php';
+		require_once plugin_dir_path( __FILE__ ) . 'class-zenadmin-portability.php';
 		$portability = new \ZenAdmin_Portability();
 		$portability->init();
 
@@ -279,7 +279,7 @@ class Core {
 
 		$blacklist[ $hash ] = array(
 			'selector'   => $selector,
-			'label'      => $label ?: $selector,
+			'label'      => $label ? $label : $selector,
 			'hidden_for' => $hidden_for,
 			'target_url' => $target_url,   // URL to hard block
 			'hard_block' => $hard_block,   // Boolean flag

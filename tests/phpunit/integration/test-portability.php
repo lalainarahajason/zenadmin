@@ -22,7 +22,7 @@ class Portability_Test extends WP_UnitTestCase {
 		parent::setUp();
 		// Ensure class is loaded
 		if ( ! class_exists( 'ZenAdmin_Portability' ) ) {
-			require_once dirname( dirname( dirname( __DIR__ ) ) ) . '/includes/class-portability.php';
+			require_once dirname( dirname( dirname( __DIR__ ) ) ) . '/includes/class-zenadmin-portability.php';
 		}
 		$this->portability = new ZenAdmin_Portability();
 	}
