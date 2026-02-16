@@ -318,20 +318,41 @@
 		},
 
 		/**
-		 * Shorthand methods
+		 * Show success toast
+		 *
+		 * @param {string} message  - The message to display.
+		 * @param {number} duration - Duration in ms (optional).
 		 */
 		success: function (message, duration) {
 			return this.show(message, 'success', duration);
 		},
 
+		/**
+		 * Show error toast
+		 *
+		 * @param {string} message  - The message to display.
+		 * @param {number} duration - Duration in ms (optional, default 6000).
+		 */
 		error: function (message, duration) {
 			return this.show(message, 'error', duration || 6000);
 		},
 
+		/**
+		 * Show warning toast
+		 *
+		 * @param {string} message  - The message to display.
+		 * @param {number} duration - Duration in ms (optional, default 5000).
+		 */
 		warning: function (message, duration) {
 			return this.show(message, 'warning', duration || 5000);
 		},
 
+		/**
+		 * Show info toast
+		 *
+		 * @param {string} message  - The message to display.
+		 * @param {number} duration - Duration in ms (optional).
+		 */
 		info: function (message, duration) {
 			return this.show(message, 'info', duration);
 		},
