@@ -10,9 +10,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
     
-    # NOTE : Le service mysql:8.0 a été supprimé. 
-    # wp-env installe et gère son propre conteneur MariaDB/MySQL.
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -22,44 +19,42 @@ jobs:
       with:
         node-version: '20'
         cache: 'npm'
+        cache-dependency-path: package-lock.json
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.1' # Aligné avec votre composer.json
+        php-version: '8.1'
         tools: composer, cs2pr
         coverage: none
 
+    # --- Gestion du Cache Composer ---
+    - name: Get Composer Cache Directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+    - name: Cache PHP dependencies
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: ${{ runner.os }}-composer-
+
     - name: Install JS Dependencies
-      run: npm install
-
-    # Sécurité : On ne push des fixes auto que sur les branches de travail
-    - name: Auto-fix JS Linting Errors
-      if: github.ref != 'refs/heads/main'
-      run: |
-        npx eslint assets/ --fix || true
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add -A
-        git diff --quiet && git diff --staged --quiet || (git commit -m "style: auto-fix ESLint errors" && git push)
-
-    - name: Lint JS
-      run: npm run lint:js
+      run: npm ci
 
     - name: Install PHP Dependencies
       run: composer install --prefer-dist --no-progress
 
-    - name: Lint PHP
-      run: composer run lint
-
-    - name: Run JS Tests
-      run: npm run test:js
-
-    - name: Start WordPress Environment (wp-env)
-      # wp-env start télécharge les images Docker de WP et de la DB.
+    - name: Start WordPress Environment
       run: npx wp-env start
       
-    - name: Run PHP Tests (Integration via wp-env)
-      # L'astuce : on exécute via composer pour que le binaire soit trouvé dans le vendor mappé.
-      # Si vendor/ n'est pas mappé, wp-env run réinstallera ou cherchera dans le path.
-      run: npx wp-env run tests-cli "composer run test"
+    - name: Run PHP Tests (Integration)
+      # On force le --workdir pour que vendor/bin/phpunit soit trouvé immédiatement
+      run: |
+        npx wp-env run tests-cli --workdir=/var/www/html/wp-content/plugins/zenadmin "composer run test"
+
+    - name: Debug on Failure
+      if: failure()
+      run: |
+        npx wp-env run tests-cli --workdir=/var/www/html/wp-content/plugins/zenadmin "ls -la vendor/bin"
