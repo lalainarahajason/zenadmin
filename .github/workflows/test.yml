@@ -60,8 +60,14 @@ jobs:
     - name: Run JS Tests
       run: npm run test:js
 
+    - name: Debug - List Vendor Directory
+      run: ls -la vendor/bin
+      
     - name: Start WordPress Environment (wp-env)
       run: npm run env:start
+      
+    - name: Debug - Utils Container
+      run: npx wp-env run tests-cli ls -la
       
     - name: Run PHP Tests (Integration via wp-env)
       run: npm run test:php
